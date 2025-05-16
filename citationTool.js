@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250514-sd-tt-tggl", // Versão com Shadow DOM, trusted types e lógica de toggle
+      version: "v20250515", // Versão com Shadow DOM, trusted types e lógica de toggle
       credits: "by @magasine",
     },
     FORMATS: [
@@ -195,6 +195,8 @@ javascript: (() => {
       const cssText = `
          :host { position: fixed; top: 10px; right: 10px; z-index: 999999; }
          .citation-tool { width: 350px; background: #fff; border: 1px solid #ddd; border-radius: 10px; font-family: sans-serif; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+         .citation-tool a { text-decoration:none; }
+         .citation-tool a:hover { text-decoration:underline; }
          .citation-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #296fa7; color: white; cursor: move; }
          .citation-container { padding: 12px; max-height: 70vh; overflow-y: auto; }
          .citation-preview { padding: 8px; margin: 8px 0; border: 1px solid #eee; border-radius: 4px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; }
@@ -226,15 +228,18 @@ javascript: (() => {
       header.className = "citation-header";
       const titleElement = document.createElement("h3");
       titleElement.textContent = CONFIG.APP_INFO.name;
-      const versionBadge = document.createElement("sup");
-      versionBadge.textContent = CONFIG.APP_INFO.version;
-      Object.assign(versionBadge.style, {
-        color: "#bcbcbc",
-        fontSize: "0.7em",
-        fontWeight: "300",
-        padding: "5px",
-      });
-      titleElement.appendChild(versionBadge);
+
+      // Version badge
+      // const versionBadge = document.createElement("sup");
+      // versionBadge.textContent = CONFIG.APP_INFO.version;
+      // Object.assign(versionBadge.style, {
+      //   color: "#bcbcbc",
+      //   fontSize: "0.7em",
+      //   fontWeight: "300",
+      //   padding: "5px",
+      // });
+      // titleElement.appendChild(versionBadge);
+
       const controls = document.createElement("div");
       controls.className = "window-controls";
       const minimizeBtn = document.createElement("button");
@@ -372,18 +377,49 @@ javascript: (() => {
       qrBtn.className = "citation-button";
       qrBtn.textContent = "Capture by QR Code";
       qrBtn.id = "qr-button";
+
+      // Footer
       const footer = document.createElement("div");
       Object.assign(footer.style, {
         padding: "8px",
         textAlign: "center",
         fontSize: "12px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "4px",
+        flexWrap: "wrap",
       });
+
+      // Version
+      const versionSpan = document.createElement("span");
+      versionSpan.textContent = CONFIG.APP_INFO.version;
+      footer.appendChild(versionSpan);
+
+      // First separator
+      footer.appendChild(document.createTextNode("|"));
+
+      // Credits
       const creditsLink = document.createElement("a");
       creditsLink.href = "https://linktr.ee/magasine";
       creditsLink.target = "_blank";
       creditsLink.style.color = "inherit";
-      creditsLink.textContent = CONFIG.APP_INFO.credits;
+      creditsLink.textContent = "by @magasine";
       footer.appendChild(creditsLink);
+
+      // Second separator
+      footer.appendChild(document.createTextNode("|"));
+
+      // Help link
+      const helpLink = document.createElement("a");
+      helpLink.href =
+        "https://drive.google.com/file/d/1PZcw-Syb1ngz3fudr15LPn5Civqzrnzz/view?usp=sharing";
+      helpLink.target = "_blank";
+      helpLink.style.color = "inherit";
+      helpLink.textContent = "Help";
+      footer.appendChild(helpLink);
+
+      // footer.appendChild(creditsLink);
       container.appendChild(modeSelector);
       container.appendChild(preview);
       container.appendChild(clipboardControls);
