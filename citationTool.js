@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250517", // Versão atualizada com suporte a touch e responsividade
+      version: "v20250517.1", // Versão atualizada com correções de acessibilidade para botões
       credits: "by @magasine",
     },
     FORMATS: [
@@ -119,6 +119,12 @@ javascript: (() => {
     isMobileDevice: () => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
+    
+    // Verifica se um elemento é ou está contido em outro elemento
+    isElementOrChildOf: (element, container) => {
+      if (!element || !container) return false;
+      return element === container || container.contains(element);
+    }
   };
 
   // Citation module
@@ -233,6 +239,12 @@ javascript: (() => {
           touch-action: none; /* Previne comportamento padrão de toque */
         }
         
+        .citation-title {
+          flex-grow: 1;
+          padding: 10px 0;
+          user-select: none;
+        }
+        
         .citation-container { 
           padding: 12px; 
           max-height: 70vh; 
@@ -332,6 +344,7 @@ javascript: (() => {
           width: 20px; 
           text-align: center; 
           line-height: 1; 
+          touch-action: manipulation; /* Melhora a resposta ao toque */
         }
         
         .window-controls .minimize-btn { 
@@ -412,7 +425,13 @@ javascript: (() => {
           }
           
           .window-controls button {
-            padding: 8px 5px; /* Controles maiores para facilitar o toque */
+            padding: 10px; /* Área de toque maior para os botões de controle */
+            margin: 0 2px;
+            min-width: 40px; /* Largura mínima para área de toque */
+            min-height: 40px; /* Altura mínima para área de toque */
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
         }
         
@@ -470,17 +489,22 @@ javascript: (() => {
       
       const header = document.createElement("div");
       header.className = "citation-header";
+      
       const titleElement = document.createElement("h3");
       titleElement.textContent = CONFIG.APP_INFO.name;
+      titleElement.className = "citation-title";
 
       const controls = document.createElement("div");
       controls.className = "window-controls";
+      
       const minimizeBtn = document.createElement("button");
       minimizeBtn.className = "minimize-btn";
       minimizeBtn.textContent = "−";
+      minimizeBtn.setAttribute("data-control", "minimize");
       
       const closeBtn = document.createElement("button");
       closeBtn.textContent = "×";
+      closeBtn.setAttribute("data-control", "close");
       
       controls.appendChild(minimizeBtn);
       controls.appendChild(closeBtn);
@@ -734,7 +758,9 @@ javascript: (() => {
         Citation.share.qrCode(getFormattedText())
       );
       
-      minimizeBtn.addEventListener("click", () => {
+      // Eventos específicos para os botões de controle com stopPropagation
+      minimizeBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Impede que o evento se propague para o cabeçalho
         state.isMinimized = !state.isMinimized;
         badge.classList.toggle("minimized", state.isMinimized);
         minimizeBtn.textContent = state.isMinimized ? "+" : "−";
@@ -744,7 +770,22 @@ javascript: (() => {
         );
       });
       
-      closeBtn.addEventListener("click", () => hostElement.remove());
+      // Evento de toque específico para o botão minimizar
+      minimizeBtn.addEventListener("touchend", (e) => {
+        e.stopPropagation(); // Impede que o evento se propague
+        e.preventDefault(); // Previne comportamento padrão
+      });
+      
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Impede que o evento se propague para o cabeçalho
+        hostElement.remove();
+      });
+      
+      // Evento de toque específico para o botão fechar
+      closeBtn.addEventListener("touchend", (e) => {
+        e.stopPropagation(); // Impede que o evento se propague
+        e.preventDefault(); // Previne comportamento padrão
+      });
       
       document.addEventListener("selectionchange", () => {
         if (state.captureMode === "selection") {
@@ -759,16 +800,35 @@ javascript: (() => {
     },
   };
 
-  // Drag functionality aprimorada com suporte a touch
+  // Drag functionality aprimorada com suporte a touch e correção para botões
   const dragElement = (element, dragHandle) => {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     let isDragging = false;
     
+    // Referências aos botões de controle
+    const controlButtons = dragHandle.querySelectorAll('[data-control]');
+    
+    // Função para verificar se o evento ocorreu em um botão de controle
+    const isControlButton = (target) => {
+      for (const button of controlButtons) {
+        if (Utils.isElementOrChildOf(target, button)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    
     // Função para iniciar o arrasto
-    const startDrag = (clientX, clientY) => {
+    const startDrag = (clientX, clientY, target) => {
+      // Não inicia o drag se o clique/toque foi em um botão de controle
+      if (isControlButton(target)) {
+        return false;
+      }
+      
       isDragging = true;
       pos3 = clientX;
       pos4 = clientY;
+      return true;
     };
     
     // Função para mover o elemento
@@ -803,8 +863,11 @@ javascript: (() => {
     
     // Handlers para eventos de mouse
     const handleMouseDown = (e) => {
+      if (!startDrag(e.clientX, e.clientY, e.target)) {
+        return; // Se o clique foi em um botão de controle, não inicia o drag
+      }
+      
       e.preventDefault();
-      startDrag(e.clientX, e.clientY);
       document.addEventListener("mouseup", handleMouseUp);
       document.addEventListener("mousemove", handleMouseMove);
     };
@@ -823,9 +886,14 @@ javascript: (() => {
     // Handlers para eventos de touch
     const handleTouchStart = (e) => {
       if (e.touches.length === 1) {
-        e.preventDefault(); // Previne comportamento padrão como scroll
         const touch = e.touches[0];
-        startDrag(touch.clientX, touch.clientY);
+        
+        // Verifica se o toque foi em um botão de controle
+        if (!startDrag(touch.clientX, touch.clientY, touch.target)) {
+          return; // Se o toque foi em um botão de controle, não inicia o drag
+        }
+        
+        e.preventDefault(); // Previne comportamento padrão como scroll
         document.addEventListener("touchend", handleTouchEnd);
         document.addEventListener("touchcancel", handleTouchEnd);
         document.addEventListener("touchmove", handleTouchMove);
@@ -833,7 +901,7 @@ javascript: (() => {
     };
     
     const handleTouchMove = (e) => {
-      if (e.touches.length === 1) {
+      if (e.touches.length === 1 && isDragging) {
         e.preventDefault();
         const touch = e.touches[0];
         moveDrag(touch.clientX, touch.clientY);
