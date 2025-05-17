@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250517.1", // Versão atualizada com correções de acessibilidade para botões
+      version: "v20250517.3", // Versão com correção para drag em touch
       credits: "by @magasine",
     },
     FORMATS: [
@@ -42,6 +42,7 @@ javascript: (() => {
     clipboardItems: [],
     captureMode: "selection",
     isMinimized: false,
+    isDragging: false // Estado para controlar o arrasto
   };
 
   // Função de sanitização mantida para Trusted Types
@@ -120,10 +121,9 @@ javascript: (() => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
     
-    // Verifica se um elemento é ou está contido em outro elemento
-    isElementOrChildOf: (element, container) => {
-      if (!element || !container) return false;
-      return element === container || container.contains(element);
+    // Função para log de debug
+    debug: (message) => {
+      console.log(`[${CONFIG.APP_INFO.name} DEBUG] ${message}`);
     }
   };
 
@@ -226,23 +226,82 @@ javascript: (() => {
         }
         
         .citation-header { 
-          font-size: 1.1em; 
           display: flex; 
           justify-content: space-between; 
           align-items: center; 
-          padding: 0px 18px; 
           background: #296fa7; 
           color: white; 
-          cursor: move; 
           border-top-left-radius: 10px;
           border-top-right-radius: 10px;
-          touch-action: none; /* Previne comportamento padrão de toque */
+          overflow: hidden;
         }
         
-        .citation-title {
+        .citation-drag-handle {
           flex-grow: 1;
-          padding: 10px 0;
+          padding: 10px 18px;
+          font-size: 1.1em;
+          cursor: move;
           user-select: none;
+          -webkit-user-select: none;
+          position: relative;
+        }
+        
+        .citation-drag-handle::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.05);
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        
+        .citation-drag-handle:hover::after {
+          opacity: 1;
+        }
+        
+        .citation-drag-handle.dragging::after {
+          opacity: 1;
+          background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .window-controls { 
+          display: flex; 
+          align-items: center;
+          padding-right: 10px;
+        }
+        
+        .window-controls button { 
+          background: none; 
+          border: none; 
+          color: white; 
+          cursor: pointer; 
+          font-size: 1.2em; 
+          padding: 10px; 
+          min-width: 44px; 
+          min-height: 44px; 
+          text-align: center; 
+          line-height: 1; 
+          margin: 0 2px;
+          border-radius: 4px;
+          position: relative;
+          z-index: 2;
+        }
+        
+        .window-controls button:hover,
+        .window-controls button:focus {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .window-controls button:active {
+          background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .window-controls .minimize-btn { 
+          margin-right: 5px; 
         }
         
         .citation-container { 
@@ -329,28 +388,6 @@ javascript: (() => {
           align-items: center; 
         }
         
-        .window-controls { 
-          display: flex; 
-          align-items: center; 
-        }
-        
-        .window-controls button { 
-          background: none; 
-          border: none; 
-          color: white; 
-          cursor: pointer; 
-          font-size: 1.2em; 
-          padding: 0 5px; 
-          width: 20px; 
-          text-align: center; 
-          line-height: 1; 
-          touch-action: manipulation; /* Melhora a resposta ao toque */
-        }
-        
-        .window-controls .minimize-btn { 
-          margin-right: 8px; 
-        }
-        
         .mode-selector { 
           margin-bottom: 8px; 
         }
@@ -421,17 +458,17 @@ javascript: (() => {
           }
           
           .citation-button {
-            padding: 10px 8px; /* Botões maiores para facilitar o toque */
+            padding: 12px 8px; /* Botões maiores para facilitar o toque */
           }
           
           .window-controls button {
-            padding: 10px; /* Área de toque maior para os botões de controle */
-            margin: 0 2px;
-            min-width: 40px; /* Largura mínima para área de toque */
-            min-height: 40px; /* Altura mínima para área de toque */
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-width: 48px; /* Área de toque ainda maior em mobile */
+            min-height: 48px;
+            margin: 0 3px;
+          }
+          
+          .citation-drag-handle {
+            padding: 15px 18px; /* Área de drag maior em mobile */
           }
         }
         
@@ -487,28 +524,41 @@ javascript: (() => {
       badge.className = "citation-tool";
       badge.id = CONFIG.BADGE_ID;
       
+      // Cabeçalho com separação estrutural entre área arrastável e controles
       const header = document.createElement("div");
       header.className = "citation-header";
       
+      // Área exclusiva para arrastar (drag handle)
+      const dragHandle = document.createElement("div");
+      dragHandle.className = "citation-drag-handle";
+      dragHandle.setAttribute("data-role", "drag-area");
+      
       const titleElement = document.createElement("h3");
       titleElement.textContent = CONFIG.APP_INFO.name;
-      titleElement.className = "citation-title";
-
+      titleElement.style.margin = "0";
+      dragHandle.appendChild(titleElement);
+      
+      // Área de controles separada
       const controls = document.createElement("div");
       controls.className = "window-controls";
+      controls.setAttribute("data-role", "controls");
       
       const minimizeBtn = document.createElement("button");
       minimizeBtn.className = "minimize-btn";
       minimizeBtn.textContent = "−";
-      minimizeBtn.setAttribute("data-control", "minimize");
+      minimizeBtn.setAttribute("data-action", "minimize");
+      minimizeBtn.setAttribute("aria-label", "Minimize");
       
       const closeBtn = document.createElement("button");
       closeBtn.textContent = "×";
-      closeBtn.setAttribute("data-control", "close");
+      closeBtn.setAttribute("data-action", "close");
+      closeBtn.setAttribute("aria-label", "Close");
       
       controls.appendChild(minimizeBtn);
       controls.appendChild(closeBtn);
-      header.appendChild(titleElement);
+      
+      // Montagem do cabeçalho com as duas áreas separadas
+      header.appendChild(dragHandle);
       header.appendChild(controls);
       
       const container = document.createElement("div");
@@ -758,9 +808,8 @@ javascript: (() => {
         Citation.share.qrCode(getFormattedText())
       );
       
-      // Eventos específicos para os botões de controle com stopPropagation
+      // Eventos específicos para os botões de controle
       minimizeBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // Impede que o evento se propague para o cabeçalho
         state.isMinimized = !state.isMinimized;
         badge.classList.toggle("minimized", state.isMinimized);
         minimizeBtn.textContent = state.isMinimized ? "+" : "−";
@@ -770,21 +819,8 @@ javascript: (() => {
         );
       });
       
-      // Evento de toque específico para o botão minimizar
-      minimizeBtn.addEventListener("touchend", (e) => {
-        e.stopPropagation(); // Impede que o evento se propague
-        e.preventDefault(); // Previne comportamento padrão
-      });
-      
-      closeBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // Impede que o evento se propague para o cabeçalho
+      closeBtn.addEventListener("click", () => {
         hostElement.remove();
-      });
-      
-      // Evento de toque específico para o botão fechar
-      closeBtn.addEventListener("touchend", (e) => {
-        e.stopPropagation(); // Impede que o evento se propague
-        e.preventDefault(); // Previne comportamento padrão
       });
       
       document.addEventListener("selectionchange", () => {
@@ -796,44 +832,29 @@ javascript: (() => {
         }
       });
       
-      return badge;
+      return {
+        badge,
+        dragHandle
+      };
     },
   };
 
-  // Drag functionality aprimorada com suporte a touch e correção para botões
-  const dragElement = (element, dragHandle) => {
+  // Implementação de drag melhorada para funcionar em touch
+  const setupDrag = (element, dragHandle) => {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    let isDragging = false;
-    
-    // Referências aos botões de controle
-    const controlButtons = dragHandle.querySelectorAll('[data-control]');
-    
-    // Função para verificar se o evento ocorreu em um botão de controle
-    const isControlButton = (target) => {
-      for (const button of controlButtons) {
-        if (Utils.isElementOrChildOf(target, button)) {
-          return true;
-        }
-      }
-      return false;
-    };
     
     // Função para iniciar o arrasto
-    const startDrag = (clientX, clientY, target) => {
-      // Não inicia o drag se o clique/toque foi em um botão de controle
-      if (isControlButton(target)) {
-        return false;
-      }
-      
-      isDragging = true;
+    const startDrag = (clientX, clientY) => {
+      state.isDragging = true;
+      dragHandle.classList.add('dragging');
       pos3 = clientX;
       pos4 = clientY;
-      return true;
+      Utils.debug(`Drag iniciado em X:${clientX}, Y:${clientY}`);
     };
     
     // Função para mover o elemento
     const moveDrag = (clientX, clientY) => {
-      if (!isDragging) return;
+      if (!state.isDragging) return;
       
       pos1 = pos3 - clientX;
       pos2 = pos4 - clientY;
@@ -854,20 +875,23 @@ javascript: (() => {
       
       element.style.top = newTop + "px";
       element.style.left = newLeft + "px";
+      
+      Utils.debug(`Drag movido para X:${clientX}, Y:${clientY}`);
     };
     
     // Função para finalizar o arrasto
     const endDrag = () => {
-      isDragging = false;
+      if (!state.isDragging) return;
+      
+      state.isDragging = false;
+      dragHandle.classList.remove('dragging');
+      Utils.debug("Drag finalizado");
     };
     
     // Handlers para eventos de mouse
     const handleMouseDown = (e) => {
-      if (!startDrag(e.clientX, e.clientY, e.target)) {
-        return; // Se o clique foi em um botão de controle, não inicia o drag
-      }
-      
       e.preventDefault();
+      startDrag(e.clientX, e.clientY);
       document.addEventListener("mouseup", handleMouseUp);
       document.addEventListener("mousemove", handleMouseMove);
     };
@@ -885,39 +909,42 @@ javascript: (() => {
     
     // Handlers para eventos de touch
     const handleTouchStart = (e) => {
+      // Verificar se o toque foi na área de drag
       if (e.touches.length === 1) {
         const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
         
-        // Verifica se o toque foi em um botão de controle
-        if (!startDrag(touch.clientX, touch.clientY, touch.target)) {
-          return; // Se o toque foi em um botão de controle, não inicia o drag
-        }
+        // Importante: Não usar preventDefault aqui para permitir outros eventos touch
         
-        e.preventDefault(); // Previne comportamento padrão como scroll
-        document.addEventListener("touchend", handleTouchEnd);
-        document.addEventListener("touchcancel", handleTouchEnd);
-        document.addEventListener("touchmove", handleTouchMove);
+        document.addEventListener("touchend", handleTouchEnd, { passive: false });
+        document.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+        document.addEventListener("touchmove", handleTouchMove, { passive: false });
       }
     };
     
     const handleTouchMove = (e) => {
-      if (e.touches.length === 1 && isDragging) {
-        e.preventDefault();
+      if (e.touches.length === 1 && state.isDragging) {
+        e.preventDefault(); // Prevenir scroll apenas durante o arrasto
         const touch = e.touches[0];
         moveDrag(touch.clientX, touch.clientY);
       }
     };
     
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e) => {
+      if (state.isDragging) {
+        e.preventDefault();
+      }
       endDrag();
       document.removeEventListener("touchend", handleTouchEnd);
       document.removeEventListener("touchcancel", handleTouchEnd);
       document.removeEventListener("touchmove", handleTouchMove);
     };
     
-    // Adiciona os event listeners
+    // Adiciona os event listeners à área de drag
     dragHandle.addEventListener("mousedown", handleMouseDown);
-    dragHandle.addEventListener("touchstart", handleTouchStart, { passive: false });
+    
+    // Importante: usar { passive: false } para permitir preventDefault em touchmove
+    dragHandle.addEventListener("touchstart", handleTouchStart, { passive: true });
     
     // Retorna uma função para remover os event listeners se necessário
     return () => {
@@ -983,14 +1010,11 @@ javascript: (() => {
     // Initialize Shadow DOM
     const shadow = hostElement.attachShadow({ mode: "open" });
     UI.createStyles(shadow);
-    const citationToolElement = UI.createUI(shadow, hostElement);
-    shadow.appendChild(citationToolElement);
+    const { badge, dragHandle } = UI.createUI(shadow, hostElement);
+    shadow.appendChild(badge);
 
-    // Setup drag functionality
-    const headerElement = citationToolElement.querySelector(".citation-header");
-    if (headerElement) {
-      dragElement(hostElement, headerElement);
-    }
+    // Setup drag functionality apenas na área de drag
+    setupDrag(hostElement, dragHandle);
     
     // Ajusta posição inicial para dispositivos móveis
     if (Utils.isMobileDevice()) {
