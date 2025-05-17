@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250516", // Versão com Shadow DOM, trusted types e lógica de toggle
+      version: "v20250517", // Versão atualizada com suporte a touch e responsividade
       credits: "by @magasine",
     },
     FORMATS: [
@@ -113,6 +113,11 @@ javascript: (() => {
       } catch (error) {
         return "Could not access clipboard";
       }
+    },
+    
+    // Detecta se o dispositivo é móvel
+    isMobileDevice: () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
   };
 
@@ -225,6 +230,7 @@ javascript: (() => {
           cursor: move; 
           border-top-left-radius: 10px;
           border-top-right-radius: 10px;
+          touch-action: none; /* Previne comportamento padrão de toque */
         }
         
         .citation-container { 
@@ -392,6 +398,22 @@ javascript: (() => {
           opacity: 0;
           transition: opacity 0.3s;
           pointer-events: none;
+        }
+        
+        /* Melhorias para responsividade em dispositivos móveis */
+        @media (max-width: 480px) {
+          .citation-tool {
+            width: 90%;
+            max-width: 300px;
+          }
+          
+          .citation-button {
+            padding: 10px 8px; /* Botões maiores para facilitar o toque */
+          }
+          
+          .window-controls button {
+            padding: 8px 5px; /* Controles maiores para facilitar o toque */
+          }
         }
         
         @media (prefers-color-scheme: dark) {
@@ -737,28 +759,32 @@ javascript: (() => {
     },
   };
 
-  // Drag functionality
+  // Drag functionality aprimorada com suporte a touch
   const dragElement = (element, dragHandle) => {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    let isDragging = false;
     
-    const handleMouseDown = (e) => {
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.addEventListener("mouseup", closeDrag);
-      document.addEventListener("mousemove", elementDrag);
+    // Função para iniciar o arrasto
+    const startDrag = (clientX, clientY) => {
+      isDragging = true;
+      pos3 = clientX;
+      pos4 = clientY;
     };
     
-    const elementDrag = (e) => {
-      e.preventDefault();
-      pos1 = pos3 - e.clientX;
-      pos2 = pos4 - e.clientY;
-      pos3 = e.clientX;
-      pos4 = e.clientY;
+    // Função para mover o elemento
+    const moveDrag = (clientX, clientY) => {
+      if (!isDragging) return;
+      
+      pos1 = pos3 - clientX;
+      pos2 = pos4 - clientY;
+      pos3 = clientX;
+      pos4 = clientY;
       
       let newTop = element.offsetTop - pos2;
       let newLeft = element.offsetLeft - pos1;
       const hostRect = element.getBoundingClientRect();
       
+      // Limites para manter o elemento dentro da janela
       if (newTop < 0) newTop = 0;
       if (newLeft < 0) newLeft = 0;
       if (newTop + hostRect.height > window.innerHeight)
@@ -770,12 +796,71 @@ javascript: (() => {
       element.style.left = newLeft + "px";
     };
     
-    const closeDrag = () => {
-      document.removeEventListener("mouseup", closeDrag);
-      document.removeEventListener("mousemove", elementDrag);
+    // Função para finalizar o arrasto
+    const endDrag = () => {
+      isDragging = false;
     };
     
+    // Handlers para eventos de mouse
+    const handleMouseDown = (e) => {
+      e.preventDefault();
+      startDrag(e.clientX, e.clientY);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+    };
+    
+    const handleMouseMove = (e) => {
+      e.preventDefault();
+      moveDrag(e.clientX, e.clientY);
+    };
+    
+    const handleMouseUp = () => {
+      endDrag();
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+    
+    // Handlers para eventos de touch
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        e.preventDefault(); // Previne comportamento padrão como scroll
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+        document.addEventListener("touchend", handleTouchEnd);
+        document.addEventListener("touchcancel", handleTouchEnd);
+        document.addEventListener("touchmove", handleTouchMove);
+      }
+    };
+    
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        moveDrag(touch.clientX, touch.clientY);
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      endDrag();
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+    
+    // Adiciona os event listeners
     dragHandle.addEventListener("mousedown", handleMouseDown);
+    dragHandle.addEventListener("touchstart", handleTouchStart, { passive: false });
+    
+    // Retorna uma função para remover os event listeners se necessário
+    return () => {
+      dragHandle.removeEventListener("mousedown", handleMouseDown);
+      dragHandle.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
   };
 
   // Initialization
@@ -837,6 +922,12 @@ javascript: (() => {
     const headerElement = citationToolElement.querySelector(".citation-header");
     if (headerElement) {
       dragElement(hostElement, headerElement);
+    }
+    
+    // Ajusta posição inicial para dispositivos móveis
+    if (Utils.isMobileDevice()) {
+      hostElement.style.top = "50px"; // Posição inicial mais baixa em dispositivos móveis
+      hostElement.style.right = "10px";
     }
     
     console.log(
