@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250515", // Versão com Shadow DOM, trusted types e lógica de toggle
+      version: "v20250516", // Versão com Shadow DOM, trusted types e lógica de toggle
       credits: "by @magasine",
     },
     FORMATS: [
@@ -44,6 +44,7 @@ javascript: (() => {
     isMinimized: false,
   };
 
+  // Função de sanitização mantida para Trusted Types
   const sanitize = (str) => {
     if (!str) return "";
     return String(str)
@@ -54,6 +55,7 @@ javascript: (() => {
       .replace(/	asdasd/g, "&#39;");
   };
 
+  // Utils module
   const Utils = {
     copyToClipboard: async (text) => {
       try {
@@ -74,30 +76,20 @@ javascript: (() => {
         return false;
       }
     },
+    
     showFeedback: (shadowRoot, message, duration = 3000) => {
       let feedback = shadowRoot.getElementById("citation-feedback");
       if (!feedback) {
         feedback = document.createElement("div");
         feedback.id = "citation-feedback";
-        Object.assign(feedback.style, {
-          position: "fixed",
-          bottom: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: "rgba(0,0,0,0.8)",
-          color: "white",
-          padding: "10px 20px",
-          borderRadius: "5px",
-          zIndex: "10000",
-          opacity: "0",
-          transition: "opacity 0.3s",
-        });
+        feedback.className = "citation-feedback";
         shadowRoot.appendChild(feedback);
       }
       feedback.textContent = sanitize(message);
       feedback.style.opacity = "1";
       setTimeout(() => (feedback.style.opacity = "0"), duration);
     },
+    
     getPageContent: () => {
       const selection = window.getSelection().toString().trim();
       if (selection) return sanitize(selection);
@@ -113,6 +105,7 @@ javascript: (() => {
       }
       return "No text selected or main content found.";
     },
+    
     getClipboardText: async () => {
       try {
         const text = await navigator.clipboard?.readText();
@@ -123,6 +116,7 @@ javascript: (() => {
     },
   };
 
+  // Citation module
   const Citation = {
     format: (format, text, title, url, service, includeLink) => {
       const separator = "(...)";
@@ -131,6 +125,7 @@ javascript: (() => {
       const safeTitle = sanitize(title);
       const safeUrl = sanitize(url);
       const safeServiceUrl = sanitize(serviceUrl);
+      
       const formats = {
         plain: () =>
           `${safeTitle}\n\n${separator}\n${safeText}\n${separator}\n\nSource: ${safeUrl}` +
@@ -163,6 +158,7 @@ javascript: (() => {
       };
       return (formats[format] || formats.default)();
     },
+    
     share: {
       whatsapp: (text) =>
         window.open(
@@ -189,137 +185,336 @@ javascript: (() => {
     },
   };
 
+  // UI module
   const UI = {
     createStyles: (shadowRoot) => {
       const style = document.createElement("style");
       const cssText = `
-         :host { position: fixed; top: 10px; right: 10px; z-index: 999999; }
-         .citation-tool { width: 350px; background: #fff; border: 1px solid #ddd; border-radius: 10px; font-family: sans-serif; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-         .citation-tool a { text-decoration:none; }
-         .citation-tool a:hover { text-decoration:underline; }
-         .citation-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #296fa7; color: white; cursor: move; }
-         .citation-container { padding: 12px; max-height: 70vh; overflow-y: auto; }
-         .citation-preview { padding: 8px; margin: 8px 0; border: 1px solid #eee; border-radius: 4px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; }
-         .citation-button { width: 100%; padding: 8px; margin: 4px 0; border: none; border-radius: 4px; background: #4CAF50; color: white; cursor: pointer; }
-         .citation-tool.minimized { height: auto !important; }
-         .citation-tool.minimized .citation-container { display: none; }
-         select, input { width: 100%; padding: 6px; margin: 4px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-         .window-controls button { background: none; border: none; color: white; cursor: pointer; }
-         @media (prefers-color-scheme: dark) {
-           .citation-tool { background: #333; color: #fff; border-color: #444; }
-           .citation-header { background: #1a4a73; }
-           .citation-preview { background: #222; border-color: #444; }
-           select, input { background: #444; color: #fff; border-color: #555; }
-         }
-       `;
+        :host { 
+          position: fixed; 
+          top: 10px; 
+          right: 10px; 
+          z-index: 999999; 
+        }
+        
+        .citation-tool { 
+          width: 300px; 
+          background: #fff; 
+          border: 1px solid #ddd; 
+          border-radius: 10px; 
+          font-family: Roboto, Helvetica, Arial, sans-serif; 
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        
+        .citation-tool a { 
+          text-decoration: none; 
+        }
+        
+        .citation-tool a:hover { 
+          text-decoration: underline; 
+        }
+        
+        .citation-header { 
+          font-size: 1.1em; 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          padding: 0px 18px; 
+          background: #296fa7; 
+          color: white; 
+          cursor: move; 
+          border-top-left-radius: 10px;
+          border-top-right-radius: 10px;
+        }
+        
+        .citation-container { 
+          padding: 12px; 
+          max-height: 70vh; 
+          overflow-y: auto; 
+        }
+        
+        .citation-preview { 
+          padding: 8px; 
+          margin: 8px 0; 
+          border: 1px solid #eee; 
+          border-radius: 4px; 
+          max-height: 120px; 
+          overflow-y: auto; 
+          white-space: pre-wrap; 
+          font-size: 13px; 
+        }
+        
+        .citation-button { 
+          width: 100%; 
+          padding: 8px; 
+          margin: 4px 0; 
+          border: none; 
+          border-radius: 4px; 
+          background: #4CAF50;
+          color: white; 
+          cursor: pointer; 
+          font-size: 14px;
+        }
+        
+        .citation-button.whatsapp { 
+          background: #2196F3; 
+        }
+        
+        .citation-button.twitter { 
+          background: #2196F3; 
+        }
+        
+        .citation-button.email { 
+          background: #2196F3; 
+        }
+        
+        .citation-button.readability { 
+          background: #EA4335; 
+        }
+        
+        .citation-button.clear { 
+          background: #EA4335; 
+        }
+        
+        .citation-button.qr { 
+          background: #4CAF50; 
+        }
+        
+        .citation-tool.minimized { 
+          height: auto !important; 
+        }
+        
+        .citation-tool.minimized .citation-container { 
+          display: none; 
+        }
+        
+        select { 
+          width: 100%; 
+          padding: 6px; 
+          margin: 4px 0; 
+          border: 1px solid #ddd; 
+          border-radius: 4px; 
+          box-sizing: border-box; 
+          font-size: 14px;
+        }
+        
+        input[type="checkbox"] { 
+          display: inline-flex; 
+          padding: 6px; 
+          margin: 0 8px; 
+        }
+        
+        label { 
+          font-size: 1em; 
+          display: inline-flex; 
+          padding: 6px; 
+          align-items: center; 
+        }
+        
+        .window-controls { 
+          display: flex; 
+          align-items: center; 
+        }
+        
+        .window-controls button { 
+          background: none; 
+          border: none; 
+          color: white; 
+          cursor: pointer; 
+          font-size: 1.2em; 
+          padding: 0 5px; 
+          width: 20px; 
+          text-align: center; 
+          line-height: 1; 
+        }
+        
+        .window-controls .minimize-btn { 
+          margin-right: 8px; 
+        }
+        
+        .mode-selector { 
+          margin-bottom: 8px; 
+        }
+        
+        .mode-buttons { 
+          display: flex; 
+          margin: 8px 0; 
+          border-radius: 4px; 
+          overflow: hidden;
+          border: 1px solid #ddd;
+        }
+        
+        .mode-buttons button { 
+          flex: 1; 
+          padding: 6px; 
+          border: none;
+          background: #f5f5f5;
+          cursor: pointer;
+        }
+        
+        .mode-buttons button.active { 
+          background: #296fa7; 
+          color: white; 
+        }
+        
+        .citation-footer { 
+          padding: 8px; 
+          text-align: center; 
+          font-size: 12px; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          gap: 4px; 
+          flex-wrap: wrap; 
+          border-bottom-left-radius: 10px;
+          border-bottom-right-radius: 10px;
+          background: #f5f5f5;
+        }
+        
+        .citation-footer a { 
+          color: #296fa7; 
+        }
+        
+        .clipboard-controls { 
+          margin: 8px 0; 
+        }
+        
+        #citation-feedback {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0,0,0,0.8);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 5px;
+          z-index: 10000;
+          opacity: 0;
+          transition: opacity 0.3s;
+          pointer-events: none;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+          .citation-tool { 
+            background: #333; 
+            color: #fff; 
+            border-color: #444; 
+          }
+          
+          .citation-header { 
+            background: #1a4a73; 
+          }
+          
+          .citation-preview { 
+            background: #222; 
+            border-color: #444; 
+          }
+          
+          select, input { 
+            background: #444; 
+            color: #fff; 
+            border-color: #555; 
+          }
+          
+          .mode-buttons button { 
+            background: #444;
+            color: #fff;
+          }
+          
+          .citation-footer {
+            background: #444;
+            color: #fff;
+          }
+          
+          .citation-footer a {
+            color: #64B5F6;
+          }
+        }
+      `;
       style.appendChild(document.createTextNode(cssText));
       shadowRoot.appendChild(style);
     },
+    
     createUI: (shadowRoot, hostElement) => {
       const { pageUrl, pageTitle, selectedText } = {
         pageUrl: location.href,
         pageTitle: document.title || "Untitled",
         selectedText: Utils.getPageContent(),
       };
+      
       const badge = document.createElement("div");
       badge.className = "citation-tool";
       badge.id = CONFIG.BADGE_ID;
+      
       const header = document.createElement("div");
       header.className = "citation-header";
       const titleElement = document.createElement("h3");
       titleElement.textContent = CONFIG.APP_INFO.name;
-
-      // Version badge
-      // const versionBadge = document.createElement("sup");
-      // versionBadge.textContent = CONFIG.APP_INFO.version;
-      // Object.assign(versionBadge.style, {
-      //   color: "#bcbcbc",
-      //   fontSize: "0.7em",
-      //   fontWeight: "300",
-      //   padding: "5px",
-      // });
-      // titleElement.appendChild(versionBadge);
 
       const controls = document.createElement("div");
       controls.className = "window-controls";
       const minimizeBtn = document.createElement("button");
       minimizeBtn.className = "minimize-btn";
       minimizeBtn.textContent = "−";
-      Object.assign(minimizeBtn.style, {
-        background: "none",
-        border: "none",
-        color: "white",
-        cursor: "pointer",
-        fontSize: "1.2em",
-        marginRight: "8px",
-        padding: "0 5px",
-        width: "20px",
-        textAlign: "center",
-        lineHeight: "1",
-      });
+      
       const closeBtn = document.createElement("button");
       closeBtn.textContent = "×";
-      Object.assign(closeBtn.style, {
-        background: "none",
-        border: "none",
-        color: "white",
-        cursor: "pointer",
-        fontSize: "1.2em",
-        padding: "0 5px",
-        width: "20px",
-        textAlign: "center",
-        lineHeight: "1",
-      });
+      
       controls.appendChild(minimizeBtn);
       controls.appendChild(closeBtn);
       header.appendChild(titleElement);
       header.appendChild(controls);
+      
       const container = document.createElement("div");
       container.className = "citation-container";
+      
+      // Mode selector
       const modeSelector = document.createElement("div");
+      modeSelector.className = "mode-selector";
       const modeLabel = document.createElement("label");
       modeLabel.textContent = "Capture Mode:";
       modeSelector.appendChild(modeLabel);
+      
       const modeButtons = document.createElement("div");
-      Object.assign(modeButtons.style, { display: "flex", margin: "8px 0" });
+      modeButtons.className = "mode-buttons";
+      
       const selectionBtn = document.createElement("button");
       selectionBtn.textContent = "Selection";
       selectionBtn.dataset.mode = "selection";
-      Object.assign(selectionBtn.style, {
-        flex: "1",
-        padding: "6px",
-        background: state.captureMode === "selection" ? "#296fa7" : "",
-        color: state.captureMode === "selection" ? "white" : "",
-      });
+      if (state.captureMode === "selection") selectionBtn.classList.add("active");
+      
       const clipboardBtn = document.createElement("button");
       clipboardBtn.textContent = "Clipboard";
       clipboardBtn.dataset.mode = "clipboard";
-      Object.assign(clipboardBtn.style, {
-        flex: "1",
-        padding: "6px",
-        background: state.captureMode === "clipboard" ? "#296fa7" : "",
-        color: state.captureMode === "clipboard" ? "white" : "",
-      });
+      if (state.captureMode === "clipboard") clipboardBtn.classList.add("active");
+      
       modeButtons.appendChild(selectionBtn);
       modeButtons.appendChild(clipboardBtn);
       modeSelector.appendChild(modeButtons);
+      
       const preview = document.createElement("div");
       preview.className = "citation-preview";
       preview.textContent = selectedText;
+      
       const clipboardControls = document.createElement("div");
+      clipboardControls.className = "clipboard-controls";
       clipboardControls.style.display =
         state.captureMode === "clipboard" ? "block" : "none";
+      
       const addClipboardBtn = document.createElement("button");
       addClipboardBtn.className = "citation-button";
-      addClipboardBtn.style.background = "#9c27b0";
       addClipboardBtn.textContent = "Add from Clipboard";
       addClipboardBtn.id = "add-clipboard";
+      
       const clearClipboardBtn = document.createElement("button");
-      clearClipboardBtn.className = "citation-button";
+      clearClipboardBtn.className = "citation-button clear";
       clearClipboardBtn.textContent = "Clear Collection";
       clearClipboardBtn.id = "clear-clipboard";
+      
       clipboardControls.appendChild(addClipboardBtn);
       clipboardControls.appendChild(clearClipboardBtn);
+      
+      // Format controls
       const formatLabel = document.createElement("label");
       formatLabel.textContent = "Format:";
       const formatSelect = document.createElement("select");
@@ -330,6 +525,8 @@ javascript: (() => {
         option.textContent = f.text;
         formatSelect.appendChild(option);
       });
+      
+      // Readability controls
       const readabilityLabel = document.createElement("label");
       readabilityLabel.textContent = "Readability Service:";
       const readabilitySelect = document.createElement("select");
@@ -340,86 +537,72 @@ javascript: (() => {
         option.textContent = s.name;
         readabilitySelect.appendChild(option);
       });
+      
       const readabilityCheckLabel = document.createElement("label");
       const readabilityCheck = document.createElement("input");
       readabilityCheck.type = "checkbox";
       readabilityCheck.id = "include-readability";
       readabilityCheck.checked = true;
-      readabilityCheckLabel.appendChild(readabilityCheck);
       readabilityCheckLabel.appendChild(
-        document.createTextNode(" Include readability link")
+         document.createTextNode(" Include readability link")
       );
+      readabilityCheckLabel.appendChild(readabilityCheck);
+      
+      // Action buttons
       const copyBtn = document.createElement("button");
       copyBtn.className = "citation-button";
       copyBtn.textContent = "Copy to Clipboard";
       copyBtn.id = "copy-button";
+      
       const whatsappBtn = document.createElement("button");
-      whatsappBtn.className = "citation-button";
-      whatsappBtn.style.background = "#2196F3";
+      whatsappBtn.className = "citation-button whatsapp";
       whatsappBtn.textContent = "Share on WhatsApp";
       whatsappBtn.id = "whatsapp-button";
+      
       const twitterBtn = document.createElement("button");
-      twitterBtn.className = "citation-button";
-      twitterBtn.style.background = "#1DA1F2";
+      twitterBtn.className = "citation-button twitter";
       twitterBtn.textContent = "Share on Twitter/X";
       twitterBtn.id = "twitter-button";
+      
       const emailBtn = document.createElement("button");
-      emailBtn.className = "citation-button";
-      emailBtn.style.background = "#FF5722";
+      emailBtn.className = "citation-button email";
       emailBtn.textContent = "Share via Email";
       emailBtn.id = "email-button";
+      
       const readabilityBtn = document.createElement("button");
-      readabilityBtn.className = "citation-button";
-      readabilityBtn.style.background = "#ff9800";
+      readabilityBtn.className = "citation-button readability";
       readabilityBtn.textContent = "View in Readability Service";
       readabilityBtn.id = "readability-button";
+      
       const qrBtn = document.createElement("button");
-      qrBtn.className = "citation-button";
-      qrBtn.textContent = "Capture by QR Code";
+      qrBtn.className = "citation-button qr";
+      qrBtn.textContent = "Scan the QR Code";
       qrBtn.id = "qr-button";
 
       // Footer
       const footer = document.createElement("div");
-      Object.assign(footer.style, {
-        padding: "8px",
-        textAlign: "center",
-        fontSize: "12px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: "4px",
-        flexWrap: "wrap",
-      });
+      footer.className = "citation-footer";
 
-      // Version
       const versionSpan = document.createElement("span");
       versionSpan.textContent = CONFIG.APP_INFO.version;
       footer.appendChild(versionSpan);
-
-      // First separator
       footer.appendChild(document.createTextNode("|"));
 
-      // Credits
       const creditsLink = document.createElement("a");
       creditsLink.href = "https://linktr.ee/magasine";
       creditsLink.target = "_blank";
-      creditsLink.style.color = "inherit";
       creditsLink.textContent = "by @magasine";
       footer.appendChild(creditsLink);
-
-      // Second separator
       footer.appendChild(document.createTextNode("|"));
 
-      // Help link
       const helpLink = document.createElement("a");
       helpLink.href =
         "https://drive.google.com/file/d/1PZcw-Syb1ngz3fudr15LPn5Civqzrnzz/view?usp=sharing";
       helpLink.target = "_blank";
-      helpLink.style.color = "inherit";
       helpLink.textContent = "Help";
       footer.appendChild(helpLink);
 
-      // footer.appendChild(creditsLink);
+      // Assemble UI
       container.appendChild(modeSelector);
       container.appendChild(preview);
       container.appendChild(clipboardControls);
@@ -429,14 +612,17 @@ javascript: (() => {
       container.appendChild(readabilitySelect);
       container.appendChild(readabilityCheckLabel);
       container.appendChild(copyBtn);
+      container.appendChild(qrBtn);
       container.appendChild(whatsappBtn);
       container.appendChild(twitterBtn);
       container.appendChild(emailBtn);
       container.appendChild(readabilityBtn);
-      container.appendChild(qrBtn);
+      
       badge.appendChild(header);
       badge.appendChild(container);
       badge.appendChild(footer);
+      
+      // Event handlers
       const updatePreview = () => {
         clipboardControls.style.display =
           state.captureMode === "clipboard" ? "block" : "none";
@@ -455,20 +641,16 @@ javascript: (() => {
           preview.textContent = Utils.getPageContent();
         }
       };
+      
       [selectionBtn, clipboardBtn].forEach((btn) => {
         btn.addEventListener("click", () => {
           state.captureMode = btn.dataset.mode;
-          selectionBtn.style.background =
-            state.captureMode === "selection" ? "#296fa7" : "";
-          selectionBtn.style.color =
-            state.captureMode === "selection" ? "white" : "";
-          clipboardBtn.style.background =
-            state.captureMode === "clipboard" ? "#296fa7" : "";
-          clipboardBtn.style.color =
-            state.captureMode === "clipboard" ? "white" : "";
+          selectionBtn.classList.toggle("active", state.captureMode === "selection");
+          clipboardBtn.classList.toggle("active", state.captureMode === "clipboard");
           updatePreview();
         });
       });
+      
       addClipboardBtn.addEventListener("click", async () => {
         const text = await Utils.getClipboardText();
         if (text && !text.includes("Clipboard access")) {
@@ -479,11 +661,13 @@ javascript: (() => {
           Utils.showFeedback(shadowRoot, "✗ Could not access clipboard");
         }
       });
+      
       clearClipboardBtn.addEventListener("click", () => {
         state.clipboardItems = [];
         updatePreview();
         Utils.showFeedback(shadowRoot, "✓ Collection cleared");
       });
+      
       const getFormattedText = () => {
         const format = formatSelect.value;
         const service = CONFIG.READABILITY_SERVICES[readabilitySelect.value];
@@ -501,26 +685,33 @@ javascript: (() => {
           includeLink
         );
       };
+      
       copyBtn.addEventListener("click", async () => {
         const success = await Utils.copyToClipboard(getFormattedText());
         Utils.showFeedback(shadowRoot, success ? "✓ Copied!" : "✗ Copy failed");
       });
+      
       whatsappBtn.addEventListener("click", () =>
         Citation.share.whatsapp(getFormattedText())
       );
+      
       twitterBtn.addEventListener("click", () =>
         Citation.share.twitter(getFormattedText())
       );
+      
       emailBtn.addEventListener("click", () =>
         Citation.share.email(getFormattedText(), pageTitle)
       );
+      
       readabilityBtn.addEventListener("click", () => {
         const service = CONFIG.READABILITY_SERVICES[readabilitySelect.value];
         window.open(service.url(pageUrl), "_blank");
       });
+      
       qrBtn.addEventListener("click", () =>
         Citation.share.qrCode(getFormattedText())
       );
+      
       minimizeBtn.addEventListener("click", () => {
         state.isMinimized = !state.isMinimized;
         badge.classList.toggle("minimized", state.isMinimized);
@@ -530,7 +721,9 @@ javascript: (() => {
           state.isMinimized ? "UI minimized" : "UI restored"
         );
       });
+      
       closeBtn.addEventListener("click", () => hostElement.remove());
+      
       document.addEventListener("selectionchange", () => {
         if (state.captureMode === "selection") {
           setTimeout(() => {
@@ -539,50 +732,58 @@ javascript: (() => {
           }, 300);
         }
       });
+      
       return badge;
     },
   };
 
+  // Drag functionality
   const dragElement = (element, dragHandle) => {
-    let pos1 = 0,
-      pos2 = 0,
-      pos3 = 0,
-      pos4 = 0;
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    
     const handleMouseDown = (e) => {
       pos3 = e.clientX;
       pos4 = e.clientY;
       document.addEventListener("mouseup", closeDrag);
       document.addEventListener("mousemove", elementDrag);
     };
+    
     const elementDrag = (e) => {
       e.preventDefault();
       pos1 = pos3 - e.clientX;
       pos2 = pos4 - e.clientY;
       pos3 = e.clientX;
       pos4 = e.clientY;
+      
       let newTop = element.offsetTop - pos2;
       let newLeft = element.offsetLeft - pos1;
       const hostRect = element.getBoundingClientRect();
+      
       if (newTop < 0) newTop = 0;
       if (newLeft < 0) newLeft = 0;
       if (newTop + hostRect.height > window.innerHeight)
         newTop = window.innerHeight - hostRect.height;
       if (newLeft + hostRect.width > window.innerWidth)
         newLeft = window.innerWidth - hostRect.width;
+      
       element.style.top = newTop + "px";
       element.style.left = newLeft + "px";
     };
+    
     const closeDrag = () => {
       document.removeEventListener("mouseup", closeDrag);
       document.removeEventListener("mousemove", elementDrag);
     };
+    
     dragHandle.addEventListener("mousedown", handleMouseDown);
   };
 
+  // Initialization
   const init = () => {
     console.log(
       `[${CONFIG.APP_INFO.name} DEBUG] init() chamada. CONFIG.HOST_ID: ${CONFIG.HOST_ID}, Versão do script: ${CONFIG.APP_INFO.version}`
     );
+    
     const existingHost = document.getElementById(CONFIG.HOST_ID);
 
     if (existingHost) {
@@ -595,7 +796,6 @@ javascript: (() => {
         console.log(
           `[${CONFIG.APP_INFO.name} DEBUG] existingHost.remove() chamado. UI foi fechada.`
         );
-        // Verifica se a remoção foi bem-sucedida (opcional, mas bom para depuração)
         if (document.getElementById(CONFIG.HOST_ID)) {
           console.error(
             `[${CONFIG.APP_INFO.name} DEBUG] ERRO CRÍTICO: Host ainda existe no DOM após remove()! ID: ${CONFIG.HOST_ID}`
@@ -605,13 +805,12 @@ javascript: (() => {
             `[${CONFIG.APP_INFO.name} DEBUG] SUCESSO: Host não foi encontrado no DOM após remove(). Comportamento de toggle: UI fechada.`
           );
         }
-        return; // IMPORTANTE: Termina a execução aqui se a UI foi fechada (comportamento de toggle)
+        return;
       } catch (e) {
         console.error(
           `[${CONFIG.APP_INFO.name} DEBUG] Erro ao tentar remover existingHost:`,
           e
         );
-        // Se a remoção falhar, por segurança, não prosseguir para criar uma nova UI para evitar duplicatas.
         return;
       }
     } else {
@@ -620,7 +819,7 @@ javascript: (() => {
       );
     }
 
-    // Esta parte só será executada se nenhum host existente foi encontrado (ou seja, a UI está fechada e será aberta)
+    // Create Shadow DOM host
     const hostElement = document.createElement("div");
     hostElement.id = CONFIG.HOST_ID;
     console.log(
@@ -628,22 +827,24 @@ javascript: (() => {
     );
     document.body.appendChild(hostElement);
 
+    // Initialize Shadow DOM
     const shadow = hostElement.attachShadow({ mode: "open" });
     UI.createStyles(shadow);
     const citationToolElement = UI.createUI(shadow, hostElement);
     shadow.appendChild(citationToolElement);
 
+    // Setup drag functionality
     const headerElement = citationToolElement.querySelector(".citation-header");
     if (headerElement) {
       dragElement(hostElement, headerElement);
     }
+    
     console.log(
       `[${CONFIG.APP_INFO.name} DEBUG] Nova UI criada e configurada no host ${hostElement.id}.`
     );
   };
 
-  // Adiciona uma verificação global para evitar que o script seja injetado múltiplas vezes pelo mesmo bookmarklet/loader em um curto espaço de tempo
-  // Isso é diferente da lógica de toggle da UI, mas pode ajudar a evitar execuções muito rápidas e sobrepostas do script em si.
+  // Prevent multiple executions
   if (
     window.citationToolInitiated &&
     Date.now() - window.citationToolInitiated < 1000
