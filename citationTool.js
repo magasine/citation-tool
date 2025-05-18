@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250518.2", // Versão com correção para drag em touch
+      version: "v20250518", // Versão com correção para drag em touch
       credits: "by @magasine",
     },
     FORMATS: [
@@ -722,12 +722,12 @@ javascript: (() => {
       container.appendChild(readabilityLabel);
       container.appendChild(readabilitySelect);
       container.appendChild(readabilityCheckLabel);
+      container.appendChild(readabilityBtn);
       container.appendChild(copyBtn);
       container.appendChild(qrBtn);
       container.appendChild(whatsappBtn);
       container.appendChild(twitterBtn);
       container.appendChild(emailBtn);
-      container.appendChild(readabilityBtn);
 
       badge.appendChild(header);
       badge.appendChild(container);
