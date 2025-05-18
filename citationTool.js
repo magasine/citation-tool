@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250517.3", // Versão com correção para drag em touch
+      version: "v20250518.2", // Versão com correção para drag em touch
       credits: "by @magasine",
     },
     FORMATS: [
@@ -42,7 +42,7 @@ javascript: (() => {
     clipboardItems: [],
     captureMode: "selection",
     isMinimized: false,
-    isDragging: false // Estado para controlar o arrasto
+    isDragging: false, // Estado para controlar o arrasto
   };
 
   // Função de sanitização mantida para Trusted Types
@@ -77,7 +77,7 @@ javascript: (() => {
         return false;
       }
     },
-    
+
     showFeedback: (shadowRoot, message, duration = 3000) => {
       let feedback = shadowRoot.getElementById("citation-feedback");
       if (!feedback) {
@@ -90,7 +90,7 @@ javascript: (() => {
       feedback.style.opacity = "1";
       setTimeout(() => (feedback.style.opacity = "0"), duration);
     },
-    
+
     getPageContent: () => {
       const selection = window.getSelection().toString().trim();
       if (selection) return sanitize(selection);
@@ -106,7 +106,7 @@ javascript: (() => {
       }
       return "No text selected or main content found.";
     },
-    
+
     getClipboardText: async () => {
       try {
         const text = await navigator.clipboard?.readText();
@@ -115,16 +115,18 @@ javascript: (() => {
         return "Could not access clipboard";
       }
     },
-    
+
     // Detecta se o dispositivo é móvel
     isMobileDevice: () => {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
     },
-    
+
     // Função para log de debug
     debug: (message) => {
       console.log(`[${CONFIG.APP_INFO.name} DEBUG] ${message}`);
-    }
+    },
   };
 
   // Citation module
@@ -136,7 +138,7 @@ javascript: (() => {
       const safeTitle = sanitize(title);
       const safeUrl = sanitize(url);
       const safeServiceUrl = sanitize(serviceUrl);
-      
+
       const formats = {
         plain: () =>
           `${safeTitle}\n\n${separator}\n${safeText}\n${separator}\n\nSource: ${safeUrl}` +
@@ -169,7 +171,7 @@ javascript: (() => {
       };
       return (formats[format] || formats.default)();
     },
-    
+
     share: {
       whatsapp: (text) =>
         window.open(
@@ -204,7 +206,7 @@ javascript: (() => {
         :host { 
           position: fixed; 
           top: 10px; 
-          right: 10px; 
+          right: 10px; /* antes 10px */
           z-index: 999999; 
         }
         
@@ -224,7 +226,22 @@ javascript: (() => {
         .citation-tool a:hover { 
           text-decoration: underline; 
         }
-        
+
+        #citation-tool-host {
+         resize: none;
+         width: 300px !important;
+         min-width: 300px !important;
+         max-width: 300px !important;
+       }
+
+       @media (max-width: 300px) {
+         #citation-tool-host {
+           width: 95% !important;
+           /* min-width: 90% !important; */
+           max-width: 95% !important;
+         }
+       }
+
         .citation-header { 
           display: flex; 
           justify-content: space-between; 
@@ -237,8 +254,8 @@ javascript: (() => {
         }
         
         .citation-drag-handle {
-          flex-grow: 1;
-          padding: 10px 18px;
+          flex-grow: 3; /* antes 1 */
+          padding: 10px 10px; /* antes 10px 18px */
           font-size: 1.1em;
           cursor: move;
           user-select: none;
@@ -271,7 +288,7 @@ javascript: (() => {
         .window-controls { 
           display: flex; 
           align-items: center;
-          padding-right: 10px;
+          padding-right: 5px; /* antes 10px */
         }
         
         .window-controls button { 
@@ -426,9 +443,14 @@ javascript: (() => {
           border-bottom-right-radius: 10px;
           background: #f5f5f5;
         }
-        
-        .citation-footer a { 
-          color: #296fa7; 
+
+        .citation-footer {
+          background: #444;
+          color: #fff;
+        }
+          
+        .citation-footer a {
+          color: #ddd; /*  #64B5F6; */
         }
         
         .clipboard-controls { 
@@ -451,9 +473,9 @@ javascript: (() => {
         }
         
         /* Melhorias para responsividade em dispositivos móveis */
-        @media (max-width: 480px) {
+        @media (max-width: 300px) {
           .citation-tool {
-            width: 90%;
+            width: 95%; /* antes 90% */
             max-width: 300px;
           }
           
@@ -498,118 +520,111 @@ javascript: (() => {
             background: #444;
             color: #fff;
           }
-          
-          .citation-footer {
-            background: #444;
-            color: #fff;
-          }
-          
-          .citation-footer a {
-            color: #64B5F6;
-          }
         }
       `;
       style.appendChild(document.createTextNode(cssText));
       shadowRoot.appendChild(style);
     },
-    
+
     createUI: (shadowRoot, hostElement) => {
       const { pageUrl, pageTitle, selectedText } = {
         pageUrl: location.href,
         pageTitle: document.title || "Untitled",
         selectedText: Utils.getPageContent(),
       };
-      
+
       const badge = document.createElement("div");
       badge.className = "citation-tool";
       badge.id = CONFIG.BADGE_ID;
-      
+
       // Cabeçalho com separação estrutural entre área arrastável e controles
       const header = document.createElement("div");
       header.className = "citation-header";
-      
+
       // Área exclusiva para arrastar (drag handle)
       const dragHandle = document.createElement("div");
       dragHandle.className = "citation-drag-handle";
       dragHandle.setAttribute("data-role", "drag-area");
-      
+
       const titleElement = document.createElement("h3");
       titleElement.textContent = CONFIG.APP_INFO.name;
       titleElement.style.margin = "0";
       dragHandle.appendChild(titleElement);
-      
+
       // Área de controles separada
       const controls = document.createElement("div");
       controls.className = "window-controls";
       controls.setAttribute("data-role", "controls");
-      
+
       const minimizeBtn = document.createElement("button");
       minimizeBtn.className = "minimize-btn";
       minimizeBtn.textContent = "−";
       minimizeBtn.setAttribute("data-action", "minimize");
       minimizeBtn.setAttribute("aria-label", "Minimize");
-      
+
       const closeBtn = document.createElement("button");
       closeBtn.textContent = "×";
       closeBtn.setAttribute("data-action", "close");
       closeBtn.setAttribute("aria-label", "Close");
-      
+
       controls.appendChild(minimizeBtn);
       controls.appendChild(closeBtn);
-      
+
       // Montagem do cabeçalho com as duas áreas separadas
       header.appendChild(dragHandle);
       header.appendChild(controls);
-      
+
       const container = document.createElement("div");
       container.className = "citation-container";
-      
+
       // Mode selector
       const modeSelector = document.createElement("div");
       modeSelector.className = "mode-selector";
       const modeLabel = document.createElement("label");
       modeLabel.textContent = "Capture Mode:";
       modeSelector.appendChild(modeLabel);
-      
+
       const modeButtons = document.createElement("div");
       modeButtons.className = "mode-buttons";
-      
+
       const selectionBtn = document.createElement("button");
       selectionBtn.textContent = "Selection";
       selectionBtn.dataset.mode = "selection";
-      if (state.captureMode === "selection") selectionBtn.classList.add("active");
-      
+      if (state.captureMode === "selection")
+        selectionBtn.classList.add("active");
+
       const clipboardBtn = document.createElement("button");
       clipboardBtn.textContent = "Clipboard";
       clipboardBtn.dataset.mode = "clipboard";
-      if (state.captureMode === "clipboard") clipboardBtn.classList.add("active");
-      
+      if (state.captureMode === "clipboard")
+        clipboardBtn.classList.add("active");
+
       modeButtons.appendChild(selectionBtn);
       modeButtons.appendChild(clipboardBtn);
       modeSelector.appendChild(modeButtons);
-      
+
       const preview = document.createElement("div");
       preview.className = "citation-preview";
       preview.textContent = selectedText;
-      
+
       const clipboardControls = document.createElement("div");
       clipboardControls.className = "clipboard-controls";
       clipboardControls.style.display =
         state.captureMode === "clipboard" ? "block" : "none";
-      
+
       const addClipboardBtn = document.createElement("button");
       addClipboardBtn.className = "citation-button";
       addClipboardBtn.textContent = "Add from Clipboard";
       addClipboardBtn.id = "add-clipboard";
-      
+
       const clearClipboardBtn = document.createElement("button");
       clearClipboardBtn.className = "citation-button clear";
       clearClipboardBtn.textContent = "Clear Collection";
       clearClipboardBtn.id = "clear-clipboard";
-      
+
       clipboardControls.appendChild(addClipboardBtn);
       clipboardControls.appendChild(clearClipboardBtn);
-      
+
       // Format controls
       const formatLabel = document.createElement("label");
       formatLabel.textContent = "Format:";
@@ -621,7 +636,7 @@ javascript: (() => {
         option.textContent = f.text;
         formatSelect.appendChild(option);
       });
-      
+
       // Readability controls
       const readabilityLabel = document.createElement("label");
       readabilityLabel.textContent = "Readability Service:";
@@ -633,43 +648,43 @@ javascript: (() => {
         option.textContent = s.name;
         readabilitySelect.appendChild(option);
       });
-      
+
       const readabilityCheckLabel = document.createElement("label");
       const readabilityCheck = document.createElement("input");
       readabilityCheck.type = "checkbox";
       readabilityCheck.id = "include-readability";
       readabilityCheck.checked = true;
       readabilityCheckLabel.appendChild(
-         document.createTextNode(" Include readability link")
+        document.createTextNode(" Include readability link")
       );
       readabilityCheckLabel.appendChild(readabilityCheck);
-      
+
       // Action buttons
       const copyBtn = document.createElement("button");
       copyBtn.className = "citation-button";
       copyBtn.textContent = "Copy to Clipboard";
       copyBtn.id = "copy-button";
-      
+
       const whatsappBtn = document.createElement("button");
       whatsappBtn.className = "citation-button whatsapp";
       whatsappBtn.textContent = "Share on WhatsApp";
       whatsappBtn.id = "whatsapp-button";
-      
+
       const twitterBtn = document.createElement("button");
       twitterBtn.className = "citation-button twitter";
       twitterBtn.textContent = "Share on Twitter/X";
       twitterBtn.id = "twitter-button";
-      
+
       const emailBtn = document.createElement("button");
       emailBtn.className = "citation-button email";
       emailBtn.textContent = "Share via Email";
       emailBtn.id = "email-button";
-      
+
       const readabilityBtn = document.createElement("button");
       readabilityBtn.className = "citation-button readability";
       readabilityBtn.textContent = "View in Readability Service";
       readabilityBtn.id = "readability-button";
-      
+
       const qrBtn = document.createElement("button");
       qrBtn.className = "citation-button qr";
       qrBtn.textContent = "Scan the QR Code";
@@ -713,11 +728,11 @@ javascript: (() => {
       container.appendChild(twitterBtn);
       container.appendChild(emailBtn);
       container.appendChild(readabilityBtn);
-      
+
       badge.appendChild(header);
       badge.appendChild(container);
       badge.appendChild(footer);
-      
+
       // Event handlers
       const updatePreview = () => {
         clipboardControls.style.display =
@@ -737,16 +752,22 @@ javascript: (() => {
           preview.textContent = Utils.getPageContent();
         }
       };
-      
+
       [selectionBtn, clipboardBtn].forEach((btn) => {
         btn.addEventListener("click", () => {
           state.captureMode = btn.dataset.mode;
-          selectionBtn.classList.toggle("active", state.captureMode === "selection");
-          clipboardBtn.classList.toggle("active", state.captureMode === "clipboard");
+          selectionBtn.classList.toggle(
+            "active",
+            state.captureMode === "selection"
+          );
+          clipboardBtn.classList.toggle(
+            "active",
+            state.captureMode === "clipboard"
+          );
           updatePreview();
         });
       });
-      
+
       addClipboardBtn.addEventListener("click", async () => {
         const text = await Utils.getClipboardText();
         if (text && !text.includes("Clipboard access")) {
@@ -757,13 +778,13 @@ javascript: (() => {
           Utils.showFeedback(shadowRoot, "✗ Could not access clipboard");
         }
       });
-      
+
       clearClipboardBtn.addEventListener("click", () => {
         state.clipboardItems = [];
         updatePreview();
         Utils.showFeedback(shadowRoot, "✓ Collection cleared");
       });
-      
+
       const getFormattedText = () => {
         const format = formatSelect.value;
         const service = CONFIG.READABILITY_SERVICES[readabilitySelect.value];
@@ -781,33 +802,33 @@ javascript: (() => {
           includeLink
         );
       };
-      
+
       copyBtn.addEventListener("click", async () => {
         const success = await Utils.copyToClipboard(getFormattedText());
         Utils.showFeedback(shadowRoot, success ? "✓ Copied!" : "✗ Copy failed");
       });
-      
+
       whatsappBtn.addEventListener("click", () =>
         Citation.share.whatsapp(getFormattedText())
       );
-      
+
       twitterBtn.addEventListener("click", () =>
         Citation.share.twitter(getFormattedText())
       );
-      
+
       emailBtn.addEventListener("click", () =>
         Citation.share.email(getFormattedText(), pageTitle)
       );
-      
+
       readabilityBtn.addEventListener("click", () => {
         const service = CONFIG.READABILITY_SERVICES[readabilitySelect.value];
         window.open(service.url(pageUrl), "_blank");
       });
-      
+
       qrBtn.addEventListener("click", () =>
         Citation.share.qrCode(getFormattedText())
       );
-      
+
       // Eventos específicos para os botões de controle
       minimizeBtn.addEventListener("click", (e) => {
         state.isMinimized = !state.isMinimized;
@@ -818,11 +839,11 @@ javascript: (() => {
           state.isMinimized ? "UI minimized" : "UI restored"
         );
       });
-      
+
       closeBtn.addEventListener("click", () => {
         hostElement.remove();
       });
-      
+
       document.addEventListener("selectionchange", () => {
         if (state.captureMode === "selection") {
           setTimeout(() => {
@@ -831,40 +852,52 @@ javascript: (() => {
           }, 300);
         }
       });
-      
+
       return {
         badge,
-        dragHandle
+        dragHandle,
       };
     },
   };
 
   // Implementação de drag melhorada para funcionar em touch
   const setupDrag = (element, dragHandle) => {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    
+    let pos1 = 0,
+      pos2 = 0,
+      pos3 = 0,
+      pos4 = 0;
+
+    // Armazenar a largura original antes de iniciar o arrasto
+    let originalWidth = element.style.width;
+
     // Função para iniciar o arrasto
     const startDrag = (clientX, clientY) => {
       state.isDragging = true;
-      dragHandle.classList.add('dragging');
+      dragHandle.classList.add("dragging");
+
+      // Manter a largura original durante o arrasto
+      originalWidth = window.getComputedStyle(element).width;
+      element.style.width = originalWidth;
+      element.style.minWidth = originalWidth;
+      element.style.maxWidth = originalWidth;
+
       pos3 = clientX;
       pos4 = clientY;
-      Utils.debug(`Drag iniciado em X:${clientX}, Y:${clientY}`);
     };
-    
+
     // Função para mover o elemento
     const moveDrag = (clientX, clientY) => {
       if (!state.isDragging) return;
-      
+
       pos1 = pos3 - clientX;
       pos2 = pos4 - clientY;
       pos3 = clientX;
       pos4 = clientY;
-      
+
       let newTop = element.offsetTop - pos2;
       let newLeft = element.offsetLeft - pos1;
       const hostRect = element.getBoundingClientRect();
-      
+
       // Limites para manter o elemento dentro da janela
       if (newTop < 0) newTop = 0;
       if (newLeft < 0) newLeft = 0;
@@ -872,22 +905,24 @@ javascript: (() => {
         newTop = window.innerHeight - hostRect.height;
       if (newLeft + hostRect.width > window.innerWidth)
         newLeft = window.innerWidth - hostRect.width;
-      
+
+      // Aplicar nova posição mantendo a largura fixa
       element.style.top = newTop + "px";
       element.style.left = newLeft + "px";
-      
-      Utils.debug(`Drag movido para X:${clientX}, Y:${clientY}`);
+      element.style.width = originalWidth;
+      element.style.minWidth = originalWidth;
+      element.style.maxWidth = originalWidth;
     };
-    
+
     // Função para finalizar o arrasto
     const endDrag = () => {
       if (!state.isDragging) return;
-      
+
       state.isDragging = false;
-      dragHandle.classList.remove('dragging');
+      dragHandle.classList.remove("dragging");
       Utils.debug("Drag finalizado");
     };
-    
+
     // Handlers para eventos de mouse
     const handleMouseDown = (e) => {
       e.preventDefault();
@@ -895,33 +930,39 @@ javascript: (() => {
       document.addEventListener("mouseup", handleMouseUp);
       document.addEventListener("mousemove", handleMouseMove);
     };
-    
+
     const handleMouseMove = (e) => {
       e.preventDefault();
       moveDrag(e.clientX, e.clientY);
     };
-    
+
     const handleMouseUp = () => {
       endDrag();
       document.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mousemove", handleMouseMove);
     };
-    
+
     // Handlers para eventos de touch
     const handleTouchStart = (e) => {
       // Verificar se o toque foi na área de drag
       if (e.touches.length === 1) {
         const touch = e.touches[0];
         startDrag(touch.clientX, touch.clientY);
-        
+
         // Importante: Não usar preventDefault aqui para permitir outros eventos touch
-        
-        document.addEventListener("touchend", handleTouchEnd, { passive: false });
-        document.addEventListener("touchcancel", handleTouchEnd, { passive: false });
-        document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+        document.addEventListener("touchend", handleTouchEnd, {
+          passive: false,
+        });
+        document.addEventListener("touchcancel", handleTouchEnd, {
+          passive: false,
+        });
+        document.addEventListener("touchmove", handleTouchMove, {
+          passive: false,
+        });
       }
     };
-    
+
     const handleTouchMove = (e) => {
       if (e.touches.length === 1 && state.isDragging) {
         e.preventDefault(); // Prevenir scroll apenas durante o arrasto
@@ -929,7 +970,7 @@ javascript: (() => {
         moveDrag(touch.clientX, touch.clientY);
       }
     };
-    
+
     const handleTouchEnd = (e) => {
       if (state.isDragging) {
         e.preventDefault();
@@ -939,13 +980,15 @@ javascript: (() => {
       document.removeEventListener("touchcancel", handleTouchEnd);
       document.removeEventListener("touchmove", handleTouchMove);
     };
-    
+
     // Adiciona os event listeners à área de drag
     dragHandle.addEventListener("mousedown", handleMouseDown);
-    
+
     // Importante: usar { passive: false } para permitir preventDefault em touchmove
-    dragHandle.addEventListener("touchstart", handleTouchStart, { passive: true });
-    
+    dragHandle.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+
     // Retorna uma função para remover os event listeners se necessário
     return () => {
       dragHandle.removeEventListener("mousedown", handleMouseDown);
@@ -963,7 +1006,7 @@ javascript: (() => {
     console.log(
       `[${CONFIG.APP_INFO.name} DEBUG] init() chamada. CONFIG.HOST_ID: ${CONFIG.HOST_ID}, Versão do script: ${CONFIG.APP_INFO.version}`
     );
-    
+
     const existingHost = document.getElementById(CONFIG.HOST_ID);
 
     if (existingHost) {
@@ -1015,13 +1058,13 @@ javascript: (() => {
 
     // Setup drag functionality apenas na área de drag
     setupDrag(hostElement, dragHandle);
-    
+
     // Ajusta posição inicial para dispositivos móveis
     if (Utils.isMobileDevice()) {
-      hostElement.style.top = "50px"; // Posição inicial mais baixa em dispositivos móveis
-      hostElement.style.right = "10px";
+      hostElement.style.top = "10px"; // antes 50px - Posição inicial mais baixa em dispositivos móveis
+      hostElement.style.right = "5px"; // antes 10px
     }
-    
+
     console.log(
       `[${CONFIG.APP_INFO.name} DEBUG] Nova UI criada e configurada no host ${hostElement.id}.`
     );
