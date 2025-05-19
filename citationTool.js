@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250518", // Versão com correção para drag em touch
+      version: "v20250520", // Atualizei a versão para refletir a modificação
       credits: "by @magasine",
     },
     FORMATS: [
@@ -43,6 +43,7 @@ javascript: (() => {
     captureMode: "selection",
     isMinimized: false,
     isDragging: false, // Estado para controlar o arrasto
+    readabilityEnabled: true, // Novo estado para controlar a visibilidade do seletor
   };
 
   // Função de sanitização mantida para Trusted Types
@@ -203,325 +204,321 @@ javascript: (() => {
     createStyles: (shadowRoot) => {
       const style = document.createElement("style");
       const cssText = `
-        :host { 
-          position: fixed; 
-          top: 10px; 
-          right: 10px; /* antes 10px */
-          z-index: 999999; 
-        }
-        
-        .citation-tool { 
-          width: 300px; 
-          background: #fff; 
-          border: 1px solid #ddd; 
-          border-radius: 10px; 
-          font-family: Roboto, Helvetica, Arial, sans-serif; 
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }
-        
-        .citation-tool a { 
-          text-decoration: none; 
-        }
-        
-        .citation-tool a:hover { 
-          text-decoration: underline; 
-        }
-
-        #citation-tool-host {
-         resize: none;
-         width: 300px !important;
-         min-width: 300px !important;
-         max-width: 300px !important;
-       }
-
-       @media (max-width: 300px) {
-         #citation-tool-host {
-           width: 95% !important;
-           /* min-width: 90% !important; */
-           max-width: 95% !important;
+         :host { 
+           position: fixed; 
+           top: 10px; 
+           right: 10px; /* antes 10px */
+           z-index: 999999; 
          }
-       }
-
-        .citation-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          background: #296fa7; 
-          color: white; 
-          border-top-left-radius: 10px;
-          border-top-right-radius: 10px;
-          overflow: hidden;
+         
+         .citation-tool { 
+           width: 300px; 
+           background: #fff; 
+           border: 1px solid #ddd; 
+           border-radius: 10px; 
+           font-family: Roboto, Helvetica, Arial, sans-serif; 
+           box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+         }
+         
+         .citation-tool a { 
+           text-decoration: none; 
+         }
+         
+         .citation-tool a:hover { 
+           text-decoration: underline; 
+         }
+ 
+         #citation-tool-host {
+          resize: none;
+          width: 300px !important;
+          min-width: 300px !important;
+          max-width: 300px !important;
         }
-        
-        .citation-drag-handle {
-          flex-grow: 3; /* antes 1 */
-          padding: 10px 10px; /* antes 10px 18px */
-          font-size: 1.1em;
-          cursor: move;
-          user-select: none;
-          -webkit-user-select: none;
-          position: relative;
-        }
-        
-        .citation-drag-handle::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(255, 255, 255, 0.05);
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.2s;
-        }
-        
-        .citation-drag-handle:hover::after {
-          opacity: 1;
-        }
-        
-        .citation-drag-handle.dragging::after {
-          opacity: 1;
-          background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .window-controls { 
-          display: flex; 
-          align-items: center;
-          padding-right: 5px; /* antes 10px */
-        }
-        
-        .window-controls button { 
-          background: none; 
-          border: none; 
-          color: white; 
-          cursor: pointer; 
-          font-size: 1.2em; 
-          padding: 10px; 
-          min-width: 44px; 
-          min-height: 44px; 
-          text-align: center; 
-          line-height: 1; 
-          margin: 0 2px;
-          border-radius: 4px;
-          position: relative;
-          z-index: 2;
-        }
-        
-        .window-controls button:hover,
-        .window-controls button:focus {
-          background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .window-controls button:active {
-          background-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        .window-controls .minimize-btn { 
-          margin-right: 5px; 
-        }
-        
-        .citation-container { 
-          padding: 12px; 
-          max-height: 70vh; 
-          overflow-y: auto; 
-        }
-        
-        .citation-preview { 
-          padding: 8px; 
-          margin: 8px 0; 
-          border: 1px solid #eee; 
-          border-radius: 4px; 
-          max-height: 120px; 
-          overflow-y: auto; 
-          white-space: pre-wrap; 
-          font-size: 13px; 
-        }
-        
-        .citation-button { 
-          width: 100%; 
-          padding: 8px; 
-          margin: 4px 0; 
-          border: none; 
-          border-radius: 4px; 
-          background: #4CAF50;
-          color: white; 
-          cursor: pointer; 
-          font-size: 14px;
-        }
-        
-        .citation-button.whatsapp { 
-          background: #2196F3; 
-        }
-        
-        .citation-button.twitter { 
-          background: #2196F3; 
-        }
-        
-        .citation-button.email { 
-          background: #2196F3; 
-        }
-        
-        .citation-button.readability { 
-          background: #EA4335; 
-        }
-        
-        .citation-button.clear { 
-          background: #EA4335; 
-        }
-        
-        .citation-button.qr { 
-          background: #4CAF50; 
-        }
-        
-        .citation-tool.minimized { 
-          height: auto !important; 
-        }
-        
-        .citation-tool.minimized .citation-container { 
-          display: none; 
-        }
-        
-        select { 
-          width: 100%; 
-          padding: 6px; 
-          margin: 4px 0; 
-          border: 1px solid #ddd; 
-          border-radius: 4px; 
-          box-sizing: border-box; 
-          font-size: 14px;
-        }
-        
-        input[type="checkbox"] { 
-          display: inline-flex; 
-          padding: 6px; 
-          margin: 0 8px; 
-        }
-        
-        label { 
-          font-size: 1em; 
-          display: inline-flex; 
-          padding: 6px; 
-          align-items: center; 
-        }
-        
-        .mode-selector { 
-          margin-bottom: 8px; 
-        }
-        
-        .mode-buttons { 
-          display: flex; 
-          margin: 8px 0; 
-          border-radius: 4px; 
-          overflow: hidden;
-          border: 1px solid #ddd;
-        }
-        
-        .mode-buttons button { 
-          flex: 1; 
-          padding: 6px; 
-          border: none;
-          background: #f5f5f5;
-          cursor: pointer;
-        }
-        
-        .mode-buttons button.active { 
-          background: #296fa7; 
-          color: white; 
-        }
-        
-        .citation-footer { 
-          padding: 8px; 
-          text-align: center; 
-          font-size: 12px; 
-          display: flex; 
-          justify-content: center; 
-          align-items: center; 
-          gap: 4px; 
-          flex-wrap: wrap; 
-          border-bottom-left-radius: 10px;
-          border-bottom-right-radius: 10px;
-          background: #f5f5f5;
-        }
-
-        .citation-footer {
-          background: #444;
-          color: #fff;
-        }
-          
-        .citation-footer a {
-          color: #ddd; /*  #64B5F6; */
-        }
-        
-        .clipboard-controls { 
-          margin: 8px 0; 
-        }
-        
-        #citation-feedback {
-          position: fixed;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(0,0,0,0.8);
-          color: white;
-          padding: 10px 20px;
-          border-radius: 5px;
-          z-index: 10000;
-          opacity: 0;
-          transition: opacity 0.3s;
-          pointer-events: none;
-        }
-        
-        /* Melhorias para responsividade em dispositivos móveis */
+ 
         @media (max-width: 300px) {
-          .citation-tool {
-            width: 95%; /* antes 90% */
-            max-width: 300px;
-          }
-          
-          .citation-button {
-            padding: 12px 8px; /* Botões maiores para facilitar o toque */
-          }
-          
-          .window-controls button {
-            min-width: 48px; /* Área de toque ainda maior em mobile */
-            min-height: 48px;
-            margin: 0 3px;
-          }
-          
-          .citation-drag-handle {
-            padding: 15px 18px; /* Área de drag maior em mobile */
+          #citation-tool-host {
+            width: 95% !important;
+            /* min-width: 90% !important; */
+            max-width: 95% !important;
           }
         }
-        
-        @media (prefers-color-scheme: dark) {
-          .citation-tool { 
-            background: #333; 
-            color: #fff; 
-            border-color: #444; 
-          }
-          
-          .citation-header { 
-            background: #1a4a73; 
-          }
-          
-          .citation-preview { 
-            background: #222; 
-            border-color: #444; 
-          }
-          
-          select, input { 
-            background: #444; 
-            color: #fff; 
-            border-color: #555; 
-          }
-          
-          .mode-buttons button { 
-            background: #444;
-            color: #fff;
-          }
-        }
-      `;
+ 
+         .citation-header { 
+           display: flex; 
+           justify-content: space-between; 
+           align-items: center; 
+           background: #296fa7; 
+           color: white; 
+           border-top-left-radius: 10px;
+           border-top-right-radius: 10px;
+           overflow: hidden;
+         }
+         
+         .citation-drag-handle {
+           flex-grow: 3; /* antes 1 */
+           padding: 10px 10px; /* antes 10px 18px */
+           font-size: 1.1em;
+           cursor: move;
+           user-select: none;
+           -webkit-user-select: none;
+           position: relative;
+         }
+         
+         .citation-drag-handle::after {
+           content: "";
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: rgba(255, 255, 255, 0.05);
+           pointer-events: none;
+           opacity: 0;
+           transition: opacity 0.2s;
+         }
+         
+         .citation-drag-handle:hover::after {
+           opacity: 1;
+         }
+         
+         .citation-drag-handle.dragging::after {
+           opacity: 1;
+           background: rgba(255, 255, 255, 0.1);
+         }
+         
+         .window-controls { 
+           display: flex; 
+           align-items: center;
+           padding-right: 5px; /* antes 10px */
+         }
+         
+         .window-controls button { 
+           background: none; 
+           border: none; 
+           color: white; 
+           cursor: pointer; 
+           font-size: 1.2em; 
+           padding: 10px; 
+           min-width: 44px; 
+           min-height: 44px; 
+           text-align: center; 
+           line-height: 1; 
+           margin: 0 2px;
+           border-radius: 4px;
+           position: relative;
+           z-index: 2;
+         }
+         
+         .window-controls button:hover,
+         .window-controls button:focus {
+           background-color: rgba(255, 255, 255, 0.2);
+         }
+         
+         .window-controls button:active {
+           background-color: rgba(255, 255, 255, 0.3);
+         }
+         
+         .window-controls .minimize-btn { 
+           margin-right: 5px; 
+         }
+         
+         .citation-container { 
+           padding: 12px; 
+           max-height: 70vh; 
+           overflow-y: auto; 
+         }
+         
+         .citation-preview { 
+           padding: 8px; 
+           margin: 8px 0; 
+           border: 1px solid #eee; 
+           border-radius: 4px; 
+           max-height: 120px; 
+           overflow-y: auto; 
+           white-space: pre-wrap; 
+           font-size: 13px; 
+         }
+         
+         .citation-button { 
+           width: 100%; 
+           padding: 8px; 
+           margin: 4px 0; 
+           border: none; 
+           border-radius: 4px; 
+           background: #4CAF50;
+           color: white; 
+           cursor: pointer; 
+           font-size: 14px;
+         }
+         
+         .citation-button.whatsapp { 
+           background: #2196F3; 
+         }
+         
+         .citation-button.twitter { 
+           background: #2196F3; 
+         }
+         
+         .citation-button.email { 
+           background: #2196F3; 
+         }
+         
+         .citation-button.readability { 
+           background: #EA4335; 
+         }
+         
+         .citation-button.clear { 
+           background: #EA4335; 
+         }
+         
+         .citation-button.qr { 
+           background: #4CAF50; 
+         }
+         
+         .citation-tool.minimized { 
+           height: auto !important; 
+         }
+         
+         .citation-tool.minimized .citation-container { 
+           display: none; 
+         }
+         
+         select { 
+           width: 100%; 
+           padding: 6px; 
+           margin: 4px 0; 
+           border: 1px solid #ddd; 
+           border-radius: 4px; 
+           box-sizing: border-box; 
+           font-size: 14px;
+         }
+         
+         input[type="checkbox"] { 
+           display: inline-flex; 
+           padding: 6px; 
+           margin: 0 8px; 
+         }
+         
+         label { 
+           font-size: 1em; 
+           display: inline-flex; 
+           padding: 6px; 
+           align-items: center; 
+         }
+         
+         .mode-selector { 
+           margin-bottom: 8px; 
+         }
+         
+         .mode-buttons { 
+           display: flex; 
+           margin: 8px 0; 
+           border-radius: 4px; 
+           overflow: hidden;
+           border: 1px solid #ddd;
+         }
+         
+         .mode-buttons button { 
+           flex: 1; 
+           padding: 6px; 
+           border: none;
+           background: #f5f5f5;
+           cursor: pointer;
+         }
+         
+         .mode-buttons button.active { 
+           background: #296fa7; 
+           color: white; 
+         }
+         
+         .citation-footer { 
+           padding: 8px; 
+           text-align: center; 
+           font-size: 12px; 
+           display: flex; 
+           justify-content: center; 
+           align-items: center; 
+           gap: 4px; 
+           flex-wrap: wrap; 
+           border-bottom-left-radius: 10px;
+           border-bottom-right-radius: 10px;
+           background: #444;
+           color: #ddd;
+         }
+ 
+         .citation-footer a {
+           color: #ddd; /*  #64B5F6; */
+         }
+         
+         .clipboard-controls { 
+           margin: 8px 0; 
+         }
+         
+         #citation-feedback {
+           position: fixed;
+           bottom: 20px;
+           left: 50%;
+           transform: translateX(-50%);
+           background: rgba(0,0,0,0.8);
+           color: white;
+           padding: 10px 20px;
+           border-radius: 5px;
+           z-index: 10000;
+           opacity: 0;
+           transition: opacity 0.3s;
+           pointer-events: none;
+         }
+         
+         /* Melhorias para responsividade em dispositivos móveis */
+         @media (max-width: 300px) {
+           .citation-tool {
+             width: 95%; /* antes 90% */
+             max-width: 300px;
+           }
+           
+           .citation-button {
+             padding: 12px 8px; /* Botões maiores para facilitar o toque */
+           }
+           
+           .window-controls button {
+             min-width: 48px; /* Área de toque ainda maior em mobile */
+             min-height: 48px;
+             margin: 0 3px;
+           }
+           
+           .citation-drag-handle {
+             padding: 15px 18px; /* Área de drag maior em mobile */
+           }
+         }
+         
+         @media (prefers-color-scheme: dark) {
+           .citation-tool { 
+             background: #333; 
+             color: #fff; 
+             border-color: #444; 
+           }
+           
+           .citation-header { 
+             background: #1a4a73; 
+           }
+           
+           .citation-preview { 
+             background: #222; 
+             border-color: #444; 
+           }
+           
+           select, input { 
+             background: #444; 
+             color: #fff; 
+             border-color: #555; 
+           }
+           
+           .mode-buttons button { 
+             background: #444;
+             color: #fff;
+           }
+         }
+       `;
       style.appendChild(document.createTextNode(cssText));
       shadowRoot.appendChild(style);
     },
@@ -637,9 +634,22 @@ javascript: (() => {
         formatSelect.appendChild(option);
       });
 
-      // Readability controls
+      // Readability controls - modificado conforme solicitado
+      const readabilityContainer = document.createElement("div");
+      
+      const readabilityCheck = document.createElement("input");
+      readabilityCheck.type = "checkbox";
+      readabilityCheck.id = "readability-check";
+      readabilityCheck.checked = state.readabilityEnabled;
+      
       const readabilityLabel = document.createElement("label");
-      readabilityLabel.textContent = "Readability Service:";
+      readabilityLabel.htmlFor = "readability-check";
+      readabilityLabel.textContent = "Readability Link";
+      
+      // Adiciona o checkbox antes do label
+      readabilityContainer.appendChild(readabilityLabel);
+      readabilityContainer.appendChild(readabilityCheck);
+
       const readabilitySelect = document.createElement("select");
       readabilitySelect.id = "readability-select";
       CONFIG.READABILITY_SERVICES.forEach((s, i) => {
@@ -648,16 +658,7 @@ javascript: (() => {
         option.textContent = s.name;
         readabilitySelect.appendChild(option);
       });
-
-      const readabilityCheckLabel = document.createElement("label");
-      const readabilityCheck = document.createElement("input");
-      readabilityCheck.type = "checkbox";
-      readabilityCheck.id = "include-readability";
-      readabilityCheck.checked = true;
-      readabilityCheckLabel.appendChild(
-        document.createTextNode(" Include readability link")
-      );
-      readabilityCheckLabel.appendChild(readabilityCheck);
+      readabilitySelect.style.display = state.readabilityEnabled ? "block" : "none";
 
       // Action buttons
       const copyBtn = document.createElement("button");
@@ -719,9 +720,8 @@ javascript: (() => {
       container.appendChild(clipboardControls);
       container.appendChild(formatLabel);
       container.appendChild(formatSelect);
-      container.appendChild(readabilityLabel);
-      container.appendChild(readabilitySelect);
-      container.appendChild(readabilityCheckLabel);
+      container.appendChild(readabilityContainer); // Adiciona o container com checkbox e label
+      container.appendChild(readabilitySelect); // Adiciona o seletor
       container.appendChild(readabilityBtn);
       container.appendChild(copyBtn);
       container.appendChild(qrBtn);
@@ -788,7 +788,7 @@ javascript: (() => {
       const getFormattedText = () => {
         const format = formatSelect.value;
         const service = CONFIG.READABILITY_SERVICES[readabilitySelect.value];
-        const includeLink = readabilityCheck.checked;
+        const includeLink = state.readabilityEnabled; // Usa o estado do checkbox
         const text =
           state.captureMode === "selection"
             ? preview.textContent
@@ -828,6 +828,12 @@ javascript: (() => {
       qrBtn.addEventListener("click", () =>
         Citation.share.qrCode(getFormattedText())
       );
+
+      // Evento para o checkbox de readability
+      readabilityCheck.addEventListener("change", (e) => {
+        state.readabilityEnabled = e.target.checked;
+        readabilitySelect.style.display = state.readabilityEnabled ? "block" : "none";
+      });
 
       // Eventos específicos para os botões de controle
       minimizeBtn.addEventListener("click", (e) => {
