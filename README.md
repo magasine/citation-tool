@@ -1,4 +1,5 @@
 # Citation Tool – Geração e Compartilhamento de Citações e Referências Web
+<img src="./img_screenshot_citationTool_v20250520.png">  <img src="./img_screenshot_citationTool_Mobile_v20250520.png" width="343px" height="675px">
 > 
 ## O que é?
 > 
