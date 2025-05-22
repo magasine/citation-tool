@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Gerador Automático de Favorito para Citation Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/terser@5.27.0/dist/bundle.min.js"></script>
     <style>
@@ -24,9 +24,26 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #f8f9fa;
+            transition: opacity 0.3s ease;
         }
 
-        h1, h2 {
+        body.protected>*:not(.password-message) {
+            display: none;
+        }
+
+        .password-message {
+            background-color: #ffe4e6;
+            border: 1px solid #f87171;
+            color: #b91c1c;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        h1,
+        h2 {
             color: var(--primary-color);
             margin-bottom: 20px;
             text-align: center;
@@ -56,7 +73,7 @@
         }
 
         .bookmarklet-link:hover {
-            background-color: var(--primary-hover); //  anterior #2f855a
+            background-color: var(--primary-hover);
         }
 
         .instructions {
@@ -141,7 +158,12 @@
     </style>
 </head>
 
-<body>
+<body class="protected">
+
+    <div class="password-message">
+        Esta página é protegida por senha. Por favor, insira a senha no prompt que aparecerá.
+    </div>
+
     <h1>Citation Tool - Bookmarklet App</h1>
     <h2>Gerador Automático de Favorito</h2>
 
@@ -165,13 +187,77 @@
 
         <div class="debug-panel hidden" id="debugPanel">
             <button class="debug-toggle" onclick="toggleDebug()">Ocultar detalhes técnicos</button>
-            <input type="text" id="gistUrlInput" class="hidden" placeholder="URL do Gist">
+            <input type="text" id="gistUrlInput" class="hidden" placeholder="URL do Gist" />
             <pre id="output">Detalhes técnicos aparecerão aqui...</pre>
         </div>
     </div>
 
     <script>
-        // Variável para armazenar informações do badge
+        const PASSWORD = "pvgngvba";
+        let authorized = false;
+
+        // Função ROT13
+        function rot13(str) {
+            return str.replace(/[a-zA-Z]/g, function(c) {
+                var base = c <= 'Z' ? 65 : 97;
+                return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base);
+            });
+        }
+
+        // Obter dia da semana sem sufixos
+        function getDiaDaSemana() {
+            const dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+            return dias[new Date().getDay()];
+        }
+
+        // Verificar senha
+        function verificarSenha(input) {
+            if (!input) return false;
+            input = input.toLowerCase();
+            const senhaDia = rot13(getDiaDaSemana());
+            return input === senhaDia || input === PASSWORD;
+        }
+
+        // Conceder acesso
+        function concederAcesso() {
+            document.body.classList.remove("protected");
+            document.querySelector(".password-message").style.display = "none";
+            authorized = true;
+            gerarBookmarkletAutomatico();
+            
+            if (window.location.hash === "#debug") {
+                document.getElementById("debugPanel").classList.remove("hidden");
+            }
+        }
+
+        // Verificação ao carregar a página
+        window.addEventListener("DOMContentLoaded", () => {
+            if (!document.body.classList.contains("protected")) return;
+
+            // Verificar senha na URL
+            const hashSenha = window.location.hash.substring(1);
+            if (verificarSenha(hashSenha)) {
+                concederAcesso();
+                return;
+            }
+
+            // Pedir senha via prompt
+            while (true) {
+                const input = prompt("Esta página é protegida. Por favor, insira a senha:");
+                if (input === null) {
+                    alert("Acesso negado.");
+                    document.body.innerHTML = "<h2>Acesso negado.</h2>";
+                    break;
+                }
+                if (verificarSenha(input)) {
+                    concederAcesso();
+                    break;
+                }
+                alert("Senha incorreta. Tente novamente.");
+            }
+        });
+
+        // Código original do bookmarklet
         let appInfo = {
             name: "Citation Tool",
             version: "v" + new Date().toISOString().slice(0, 10).replace(/-/g, ""),
@@ -201,17 +287,14 @@
 
         function updateBookmarkletName() {
             const link = document.getElementById("bookmarkletLink");
-            link.textContent = `!  ${appInfo.name} - ${appInfo.credits} (${appInfo.version})`;
+            link.textContent = `!  ${appInfo.name} - ${appInfo.credits} #localUpdate (${appInfo.version})`;
         }
 
         function extractBadgeInfo(code) {
             try {
-                // Abordagem que ignora completamente o contexto de execução
                 const configMatch = code.match(/const\s+CONFIG\s*=\s*({[\s\S]*?});/);
                 if (configMatch) {
                     const configStr = configMatch[1];
-
-                    // Segurança extra: analisar como JSON
                     const configObj = new Function(`return ${configStr};`)();
 
                     if (configObj.APP_INFO) {
@@ -222,84 +305,51 @@
                         };
                         console.log("Badge info extraída com sucesso:", appInfo);
                     }
-                } else {
-                    console.log("Estrutura CONFIG não encontrada no código fonte");
                 }
             } catch (e) {
-                console.error("Falha na extração do badge, usando padrões:", e);
+                console.error("Falha na extração do badge:", e);
             }
         }
 
         function toggleDebug() {
             const panel = document.getElementById("debugPanel");
             const toggle = panel.querySelector(".debug-toggle");
-            const isHidden = panel.classList.contains("hidden");
-
             panel.classList.toggle("hidden");
-            toggle.textContent = isHidden ? "Ocultar detalhes técnicos" : "Mostrar detalhes técnicos";
+            toggle.textContent = panel.classList.contains("hidden") ? 
+                "Mostrar detalhes técnicos" : "Ocultar detalhes técnicos";
         }
 
-        async function loadGist() {
+        async function gerarBookmarkletAutomatico() {
             const output = document.getElementById("output");
             const link = document.getElementById("bookmarkletLink");
 
             showStatus("Processando Gist...", "loading");
-            output.textContent = "Processando...";
-            link.classList.add("hidden");
-
             try {
-                const gistUrl = document.getElementById("gistUrlInput").value.trim();
-                if (!gistUrl) throw new Error("URL do Gist não especificada");
-
+                const gistUrl = "https://gist.github.com/magasine/5d43e4a38323880f34a1da6e7c96ad0e";
                 const rawUrl = await fetchLatestGistRawUrl(gistUrl);
+                showStatus("Carregando script do bookmarklet...", "loading");
+
                 const res = await fetch(rawUrl);
-                if (!res.ok) throw new Error(`Erro ao carregar o código: ${res.status}`);
+                if (!res.ok) throw new Error(`Erro ao baixar script: ${res.status}`);
 
                 const code = await res.text();
-                if (!code.trim()) throw new Error("O Gist está vazio");
-
-                // Extrai informações do badge
                 extractBadgeInfo(code);
-
-                const minified = await Terser.minify(code, {
-                    compress: true,
-                    mangle: true,
-                });
+                const minified = await Terser.minify(code);
 
                 if (minified.error) throw minified.error;
 
-                const bookmarklet = `javascript:(()=>{${minified.code}})();`;
-                output.textContent = bookmarklet;
-                link.href = bookmarklet;
-                link.classList.remove("hidden");
                 updateBookmarkletName();
-
-                showStatus("Bookmarklet criado com sucesso! Arraste o botão abaixo para sua barra de favoritos.", "success");
-            } catch (err) {
-                showStatus("Erro: " + err.message, "error");
-                output.textContent = `Erro: ${err.message}`;
-                console.error(err);
+                link.href = `javascript:${minified.code}`;
+                link.classList.remove("hidden");
+                showStatus("Bookmarklet pronto! Arraste o botão para sua barra de favoritos.", "success");
+                output.textContent = minified.code;
+            } catch (e) {
+                showStatus("Erro: " + e.message, "error");
+                console.error(e);
             }
         }
-
-        // Carregamento automático ao iniciar
-        window.addEventListener("DOMContentLoaded", () => {
-            const input = document.getElementById("gistUrlInput");
-            const hash = decodeURIComponent(window.location.hash.slice(1));
-            const defaultGist = "https://gist.github.com/magasine/5d43e4a38323880f34a1da6e7c96ad0e";
-
-            const gistToLoad = hash.startsWith('http') ? hash : defaultGist;
-            input.value = gistToLoad;
-
-            // Mostra painel de debug se houver hash na URL
-            if (window.location.hash) {
-                document.getElementById("debugPanel").classList.remove("hidden");
-            }
-
-            // Inicia o carregamento automaticamente
-            setTimeout(() => loadGist(), 500);
-        });
     </script>
+
 </body>
 
 </html>
