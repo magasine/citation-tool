@@ -47,7 +47,7 @@
         }
 
         body.protected {
-            overflow: hidden;
+            overflow: auto;
         }
 
         body.protected>*:not(.auth-overlay, .modal-overlay, .toast-container) {
@@ -64,10 +64,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 1000;
             padding: 20px;
-            animation: fadeIn 0.5s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            /* Permite rolagem */
         }
 
         .auth-card {
@@ -78,7 +78,8 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
-            animation: slideUp 0.5s ease;
+            margin: auto 0;
+            /* Centraliza verticalmente */
         }
 
         .auth-card img {
@@ -106,7 +107,8 @@
             animation: fadeIn 0.5s ease;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             color: var(--primary-color);
             margin-bottom: 10px;
             font-weight: 700;
@@ -527,6 +529,7 @@
             from {
                 opacity: 0;
             }
+
             to {
                 opacity: 1;
             }
@@ -537,6 +540,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -548,6 +552,7 @@
                 opacity: 0;
                 transform: translateX(100%);
             }
+
             to {
                 opacity: 1;
                 transform: translateX(0);
@@ -558,6 +563,7 @@
             from {
                 opacity: 1;
             }
+
             to {
                 opacity: 0;
             }
@@ -567,6 +573,7 @@
             from {
                 transform: rotate(0deg);
             }
+
             to {
                 transform: rotate(360deg);
             }
@@ -576,18 +583,23 @@
             0% {
                 box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.4);
             }
+
             70% {
                 box-shadow: 0 0 0 10px rgba(49, 130, 206, 0);
             }
+
             100% {
                 box-shadow: 0 0 0 0 rgba(49, 130, 206, 0);
             }
         }
 
         @keyframes bounce {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0);
             }
+
             50% {
                 transform: translateY(-5px);
             }
@@ -651,7 +663,9 @@
         }
 
         /* Acessibilidade - Foco */
-        a:focus, button:focus, input:focus {
+        a:focus,
+        button:focus,
+        input:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.5);
         }
@@ -695,7 +709,9 @@
         <div class="auth-card">
             <img src="./img_screenshot_citationTool_v20250520.png" alt="Imagem Screenshot Citation Tool" width="200px">
             <h2>Acesso Protegido</h2>
-            <p>Por favor, insira a senha de instalação para continuar. A senha fornecida tem validade restrita ao dia do recebimento. Caso expire, faça novo contato com o autor pelo link abaixo:<br><br> <a class="modal-btn modal-btn-primary" href="https://linktr.ee/magasine">@magasine</a></p>
+            <p>Por favor, insira a senha de instalação para continuar. A senha fornecida tem validade restrita ao dia do
+                recebimento. Caso expire, faça novo contato com o autor pelo link abaixo:<br><br> <a
+                    class="modal-btn modal-btn-primary" href="https://linktr.ee/magasine">@magasine</a></p>
             <!-- Botão para abrir o modal diretamente da tela de proteção -->
             <button id="openModalBtn" class="modal-btn modal-btn-primary" style="width: 100%; margin-top: 10px;">
                 Inserir Senha
@@ -784,7 +800,7 @@
             toast.className = `toast ${type}`;
             toast.textContent = message;
             toastContainer.appendChild(toast);
-            
+
             setTimeout(() => {
                 toast.remove();
             }, 3000);
@@ -947,7 +963,7 @@
 
                 const code = await res.text();
                 extractBadgeInfo(code);
-                
+
                 showStatus("Minificando código...", "loading");
                 const minified = await Terser.minify(code);
 
