@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gerador Automático de Favorito para Citation Tool</title>
+    <title>Citation Tool - Installation Page</title>
     <script src="https://cdn.jsdelivr.net/npm/terser@5.27.0/dist/bundle.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,7 +67,6 @@
             padding: 20px;
             z-index: 1000;
             overflow-y: auto;
-            /* Permite rolagem */
         }
 
         .auth-card {
@@ -79,7 +78,6 @@
             max-width: 400px;
             text-align: center;
             margin: auto 0;
-            /* Centraliza verticalmente */
         }
 
         .auth-card img {
@@ -119,7 +117,7 @@
             background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             background-clip: text;
-            color: transparent;
+            color: white;
             margin-bottom: 5px;
         }
 
@@ -317,7 +315,7 @@
         .debug-panel {
             margin-top: 25px;
             padding: 20px;
-            background-color: #f8f8f8;
+            background-color: transparent;
             border-radius: var(--border-radius);
             border: 1px solid var(--light-gray);
             transition: all var(--transition-speed) ease;
@@ -340,7 +338,7 @@
         }
 
         pre {
-            background: var(--secondary-color);
+            background: white;
             padding: 15px;
             border-radius: var(--border-radius);
             overflow-x: auto;
@@ -349,6 +347,75 @@
             margin-top: 15px;
             color: #1A202C;
             font-size: 14px;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background-color: white;
+        }
+
+        .copy-btn.copied {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .debug-section {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: rgba(79, 209, 197, 0.1);
+            border-radius: var(--border-radius);
+        }
+
+        .debug-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .debug-url {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .debug-url span {
+            flex-grow: 1;
+        }
+
+        .debug-url-btn {
+            margin-left: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .debug-url-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .debug-url-btn.copied {
+            background-color: var(--success-color);
         }
 
         input {
@@ -524,6 +591,21 @@
             box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.3);
         }
 
+        /* Access Denied Page */
+        .access-denied {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .access-denied h2 {
+            color: var(--error-color);
+            margin-bottom: 20px;
+        }
+
+        .access-denied p {
+            margin-bottom: 20px;
+        }
+
         /* Animations */
         @keyframes fadeIn {
             from {
@@ -679,10 +761,10 @@
                 --light-gray: #4A5568;
             }
 
-            pre {
+            /* pre {
                 background: #4A5568;
                 color: #E2E8F0;
-            }
+            } */
 
             .instructions {
                 background-color: rgba(49, 130, 206, 0.2);
@@ -711,7 +793,8 @@
             <h2>Acesso Protegido</h2>
             <p>Por favor, insira a senha de instalação para continuar. A senha fornecida tem validade restrita ao dia do
                 recebimento. Caso expire, faça novo contato com o autor pelo link abaixo:<br><br> <a
-                    class="modal-btn modal-btn-primary" href="https://linktr.ee/magasine" target="_blank">@magasine</a></p>
+                    class="modal-btn modal-btn-primary" href="https://linktr.ee/magasine" target="_blank">@magasine</a>
+            </p>
             <!-- Botão para abrir o modal diretamente da tela de proteção -->
             <button id="openModalBtn" class="modal-btn modal-btn-primary" style="width: 100%; margin-top: 10px;">
                 Inserir Senha
@@ -737,13 +820,24 @@
         </div>
     </div>
 
+    <div id="accessDeniedPage" class="hidden">
+        <div class="container access-denied">
+            <h2>Acesso negado</h2>
+            <p>Você não forneceu a senha correta. Deseja tentar novamente?</p>
+            <button class="modal-btn modal-btn-primary" id="tryAgainBtn">Tentar Novamente</button>
+            <p style="margin-top: 20px;">Ou contate o autor em:</p>
+            <a class="modal-btn modal-btn-secondary" href="https://linktr.ee/magasine" target="_blank">@magasine</a>
+        </div>
+    </div>
+
     <header>
-        <h1>Citation Tool - Bookmarklet App</h1>
-        <h2>Gerador Automático de Favorito</h2>
+        <h1>Citation Tool - Installation Page</h1>
+        <h2>Automatic Bookmark Generator</h2>
     </header>
 
     <div class="container">
         <div class="instructions">
+            <p><sup>(Language: pt-BR)</sup></p>
             <h3>Como usar este gerador de bookmarklets:</h3>
             <ol>
                 <li>O bookmarklet é gerado automaticamente ao carregar a página</li>
@@ -762,14 +856,39 @@
 
         <div class="debug-panel hidden" id="debugPanel">
             <button class="debug-toggle" onclick="toggleDebug()">Ocultar detalhes técnicos</button>
-            <input type="text" id="gistUrlInput" class="hidden" placeholder="URL do Gist" />
-            <pre id="output">Detalhes técnicos aparecerão aqui...</pre>
+
+            <div class="debug-section">
+                <h4>URL de Acesso para Hoje</h4>
+                <div class="debug-url">
+                    <pre id="todayAccessUrl"></pre><br>
+                    <button class="debug-url-btn" onclick="copyAccessUrl()">Copy</button>
+                </div>
+                <p>Esta URL contém a senha válida para hoje e pode ser compartilhada.</p>
+            </div>
+
+            <div class="debug-section">
+                <h4>Código do Bookmarklet</h4>
+                <pre id="output">Detalhes técnicos aparecerão aqui...
+                    <button class="copy-btn" onclick="copyCode()">Copiar</button>
+                </pre>
+            </div>
         </div>
     </div>
 
     <script>
         const PASSWORD = "pvgngvba";
         let authorized = false;
+        let debugMode = window.location.hash === "#debug";
+
+        // Função para verificar e redirecionar para a URL de acesso do dia se a hash for "install"
+        function checkForTauRedirect() {
+            if (window.location.hash === "#install") {
+                const todayAccessUrl = generateTodayAccessUrl();
+                window.location.href = todayAccessUrl;
+                return true;
+            }
+            return false;
+        }
 
         // Função ROT13
         function rot13(str) {
@@ -783,6 +902,49 @@
         function getDiaDaSemana() {
             const dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
             return dias[new Date().getDay()];
+        }
+
+        // Gerar URL de acesso para o dia atual
+        function generateTodayAccessUrl() {
+            const senhaDia = rot13(getDiaDaSemana());
+            const currentUrl = window.location.href.split('#')[0];
+            return `${currentUrl}#${senhaDia}`;
+        }
+
+        // Atualizar a URL de acesso no painel de debug
+        function updateAccessUrl() {
+            const urlElement = document.getElementById('todayAccessUrl');
+            urlElement.textContent = generateTodayAccessUrl();
+        }
+
+        // Copiar URL de acesso
+        function copyAccessUrl() {
+            const url = generateTodayAccessUrl();
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.querySelector('.debug-url-btn');
+                btn.textContent = 'Copiado!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar';
+                    btn.classList.remove('copied');
+                }, 2000);
+                showToast('URL copiada para a área de transferência!', 'success');
+            });
+        }
+
+        // Copiar código
+        function copyCode() {
+            const code = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copiado!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar';
+                    btn.classList.remove('copied');
+                }, 2000);
+                showToast('Código copiado para a área de transferência!', 'success');
+            });
         }
 
         // Verificar senha
@@ -812,6 +974,7 @@
         const submitBtn = document.getElementById('submitBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const openModalBtn = document.getElementById('openModalBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
 
         function showPasswordModal() {
             passwordModal.classList.add('active');
@@ -822,6 +985,16 @@
 
         function hidePasswordModal() {
             passwordModal.classList.remove('active');
+        }
+
+        function showAccessDenied() {
+            document.getElementById('accessDeniedPage').classList.remove('hidden');
+            document.querySelector('.auth-overlay').style.display = 'none';
+        }
+
+        function hideAccessDenied() {
+            document.getElementById('accessDeniedPage').classList.add('hidden');
+            document.querySelector('.auth-overlay').style.display = 'flex';
         }
 
         // Adicionar evento de clique ao botão da tela de proteção
@@ -844,10 +1017,12 @@
 
         cancelBtn.addEventListener('click', () => {
             hidePasswordModal();
-            document.body.innerHTML = `<div class="container" style="text-align: center; margin-top: 50px;">
-                <h2>Acesso negado</h2>
-                <p>Contate o autor em <a href="https://linktr.ee/magasine" target="_blank">https://linktr.ee/magasine</a></p>
-            </div>`;
+            showAccessDenied();
+        });
+
+        tryAgainBtn.addEventListener('click', () => {
+            hideAccessDenied();
+            showPasswordModal();
         });
 
         passwordInput.addEventListener('keypress', (e) => {
@@ -860,27 +1035,32 @@
         function concederAcesso() {
             document.body.classList.remove("protected");
             document.querySelector(".auth-overlay").style.display = "none";
+            document.getElementById("accessDeniedPage").classList.add("hidden");
             authorized = true;
             gerarBookmarkletAutomatico();
 
-            if (window.location.hash === "#debug") {
+            if (debugMode) {
                 document.getElementById("debugPanel").classList.remove("hidden");
+                updateAccessUrl();
             }
         }
 
         // Verificação ao carregar a página
         window.addEventListener("DOMContentLoaded", () => {
+            // Verificar primeiro se a hash é "install" e redirecionar se necessário
+            if (checkForTauRedirect()) {
+                return; // Interrompe a execução se o redirecionamento ocorreu
+            }
+
             if (!document.body.classList.contains("protected")) return;
 
             // Verificar senha na URL
-            const hashSenha = window.location.hash.substring(1);
-            if (verificarSenha(hashSenha)) {
+            const hash = window.location.hash.substring(1);
+            if (verificarSenha(hash)) {
+                debugMode = window.location.hash === "#debug" || hash === "debug";
                 concederAcesso();
                 return;
             }
-
-            // Não mostramos o modal automaticamente, agora temos um botão na tela de proteção
-            // O usuário deve clicar no botão "Inserir Senha" para abrir o modal
         });
 
         // Código original do bookmarklet
@@ -981,6 +1161,9 @@
                 console.error(e);
             }
         }
+
+        // Verificar redirecionamento install imediatamente
+        checkForTauRedirect();
     </script>
 
 </body>
