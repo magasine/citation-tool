@@ -880,9 +880,9 @@
         let authorized = false;
         let debugMode = window.location.hash === "#debug";
 
-        // Função para verificar e redirecionar para a URL de acesso do dia se a hash for "install"
+        // Função para verificar e redirecionar para a URL de acesso
         function checkForTauRedirect() {
-            if (window.location.hash === "#install") {
+            if (window.location.hash === "#vafgnyyngvba") {
                 const todayAccessUrl = generateTodayAccessUrl();
                 window.location.href = todayAccessUrl;
                 return true;
@@ -890,7 +890,7 @@
             return false;
         }
 
-        // Função ROT13
+        // Função para cifrar
         function rot13(str) {
             return str.replace(/[a-zA-Z]/g, function (c) {
                 var base = c <= 'Z' ? 65 : 97;
@@ -1047,7 +1047,7 @@
 
         // Verificação ao carregar a página
         window.addEventListener("DOMContentLoaded", () => {
-            // Verificar primeiro se a hash é "install" e redirecionar se necessário
+            // Verificar primeiro se a hash é "installation" e redirecionar se necessário
             if (checkForTauRedirect()) {
                 return; // Interrompe a execução se o redirecionamento ocorreu
             }
@@ -1162,7 +1162,7 @@
             }
         }
 
-        // Verificar redirecionamento install imediatamente
+        // Verificar redirecionamento installation imediatamente
         checkForTauRedirect();
     </script>
 
