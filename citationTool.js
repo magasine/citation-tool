@@ -5,7 +5,7 @@ javascript: (() => {
     HOST_ID: "citation-tool-host",
     APP_INFO: {
       name: "Citation Tool",
-      version: "v20250520", // Atualizei a versão para refletir a modificação
+      version: "v20250526", // sanitize function simplified
       credits: "by @magasine",
     },
     FORMATS: [
@@ -46,15 +46,22 @@ javascript: (() => {
     readabilityEnabled: true, // Novo estado para controlar a visibilidade do seletor
   };
 
-  // Função de sanitização mantida para Trusted Types
-  const sanitize = (str) => {
+  // Função de sanitização contextual para Trusted Types
+  const sanitize = (str, context = "html") => {
     if (!str) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/	asdasd/g, "&#39;");
+    str = String(str);
+
+    if (context === "html") {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        // .replace(/"/g, "&quot;") // simplificando
+        // .replace(/'/g, "&#39;"); // simplificando
+    }
+
+    // Para outros contextos, apenas garantir que é uma string segura
+    return str;
   };
 
   // Utils module
@@ -636,16 +643,16 @@ javascript: (() => {
 
       // Readability controls - modificado conforme solicitado
       const readabilityContainer = document.createElement("div");
-      
+
       const readabilityCheck = document.createElement("input");
       readabilityCheck.type = "checkbox";
       readabilityCheck.id = "readability-check";
       readabilityCheck.checked = state.readabilityEnabled;
-      
+
       const readabilityLabel = document.createElement("label");
       readabilityLabel.htmlFor = "readability-check";
       readabilityLabel.textContent = "Readability Link";
-      
+
       // Adiciona o checkbox antes do label
       readabilityContainer.appendChild(readabilityLabel);
       readabilityContainer.appendChild(readabilityCheck);
@@ -658,7 +665,9 @@ javascript: (() => {
         option.textContent = s.name;
         readabilitySelect.appendChild(option);
       });
-      readabilitySelect.style.display = state.readabilityEnabled ? "block" : "none";
+      readabilitySelect.style.display = state.readabilityEnabled
+        ? "block"
+        : "none";
 
       // Action buttons
       const copyBtn = document.createElement("button");
@@ -832,7 +841,9 @@ javascript: (() => {
       // Evento para o checkbox de readability
       readabilityCheck.addEventListener("change", (e) => {
         state.readabilityEnabled = e.target.checked;
-        readabilitySelect.style.display = state.readabilityEnabled ? "block" : "none";
+        readabilitySelect.style.display = state.readabilityEnabled
+          ? "block"
+          : "none";
       });
 
       // Eventos específicos para os botões de controle
